@@ -1,0 +1,5 @@
+# my-project/ml_workspace/requirements.txt
+pandas
+numpy
+scikit-learn
+joblib
