@@ -106,7 +106,7 @@ const ModernNavbar = () => {
             <a href="login" className="px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium">
               Masuk
             </a>
-            <a href="signup" className="group relative px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5">
+            <a href="/signup/" className="group relative px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5">
               <span className="relative z-10 flex items-center space-x-2">
                 <span>Daftar Gratis</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
