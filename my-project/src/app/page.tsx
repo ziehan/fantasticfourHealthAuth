@@ -11,6 +11,7 @@ export default function HomePage() {
         <Hero />
         <About /> 
       <Footer />
+      </main>
     </div>
   );
 }
