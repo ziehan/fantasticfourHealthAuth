@@ -39,7 +39,7 @@ const About = () => {
           </h2>
           
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Tim inovator yang membangun teknologi untuk mengatasi tantangan 
+            Timmm inovator yang membangun teknologi untuk mengatasi tantangan 
             distribusi SDM dan burnout tenaga medis di Indonesia.
           </p>
         </div>
