@@ -72,3 +72,26 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(160, 208, 213, 0.8); /* Warna #A0D0D5 lebih solid saat hover */
 }
+
+
+/* Styling untuk scrollbar kustom */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px; /* Lebar scrollbar */
+  height: 8px; /* Tinggi scrollbar untuk horizontal */
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1); /* Warna track dengan sedikit transparansi */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(160, 208, 213, 0.5); /* Warna #A0D0D5 dengan opacity */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 208, 213, 0.8); /* Warna #A0D0D5 lebih solid saat hover */
+}
+/* Untuk Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(160, 208, 213, 0.5) rgba(255, 255, 255, 0.1);
+}

@@ -65,7 +65,7 @@ interface FooterProps {
 }
 
 // --- Komponen Footer Utama ---
-const Footer: React.FC<FooterProps> = ({ id }) => {
+const Footer: React.FC<FooterProps> = ({ }) => {
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   const handleScroll = () => {

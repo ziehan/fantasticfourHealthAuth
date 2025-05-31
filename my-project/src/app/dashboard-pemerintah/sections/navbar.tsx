@@ -59,9 +59,9 @@ const Navbar: React.FC = () => {
   };
 
   const navLinks = [
-    { href: "#Jadwal", label: "Jadwal" },
-    { href: "#Profil", label: "Profil" },
-    { href: "#Pelatihan", label: "Pelatihan" },
+    { href: "#Data", label: "Pemetaan Data" },
+    { href: "#Analitik", label: "Pusat Analitik" },
+    { href: "#Informasi", label: "Pusat Informasi" },
   ];
 
   useEffect(() => {
