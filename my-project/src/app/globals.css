@@ -19,6 +19,12 @@
   }
 }
 
+/* app/globals.css */
+html {
+  scroll-padding-top: 85px; /* GANTI 85px dengan tinggi Navbar Anda + sedikit buffer */
+  scroll-behavior: smooth; /* Opsional, untuk scroll halus */
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

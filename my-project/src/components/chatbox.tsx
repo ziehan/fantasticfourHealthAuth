@@ -1,7 +1,9 @@
+// chatbox.tsx
 'use client';
 
 import React, { useState, FormEvent, useRef, useEffect } from 'react';
 import { Send, User, Bot, AlertTriangle } from 'lucide-react';
+import { Transition } from '@headlessui/react'; // <<<< 1. Impor Transition
 
 interface Message {
   id: string;
@@ -10,10 +12,7 @@ interface Message {
 }
 
 export default function Chatbox() {
-  const [messages, setMessages] = useState<Message[]>([
-    // Contoh pesan awal jika diperlukan
-    // { id: 'initial-1', text: 'Halo! Ada yang bisa saya bantu terkait SOP gawat darurat?', sender: 'bot'}
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
@@ -25,7 +24,7 @@ export default function Chatbox() {
 
   useEffect(scrollToBottom, [messages]);
   useEffect(() => {
-    inputRef.current?.focus(); // Fokus ke input saat komponen dimuat
+    inputRef.current?.focus();
   }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -41,9 +40,7 @@ export default function Chatbox() {
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setInputValue('');
     setIsLoading(true);
-
-    // Simulasi scroll ke bawah setelah pesan pengguna ditambahkan, sebelum bot merespons
-    setTimeout(scrollToBottom, 100); 
+    setTimeout(scrollToBottom, 100);
 
     try {
       const response = await fetch('/api/ask', {
@@ -51,29 +48,16 @@ export default function Chatbox() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: userMessageText }),
       });
-
       const data = await response.json();
       let botResponse: Message;
-
       if (response.ok && data.answer) {
-        botResponse = {
-          id: `${Date.now()}-bot`,
-          text: data.answer,
-          sender: 'bot',
-        };
+        botResponse = { id: `${Date.now()}-bot`, text: data.answer, sender: 'bot' };
       } else {
         const errorMessage = data.error || 'Gagal mendapatkan jawaban dari server.';
-        console.error('API atau Python Script Error:', data);
-        botResponse = {
-          id: `${Date.now()}-error`,
-          text: errorMessage,
-          sender: 'error',
-        };
+        botResponse = { id: `${Date.now()}-error`, text: errorMessage, sender: 'error' };
       }
       setMessages((prevMessages) => [...prevMessages, botResponse]);
-
     } catch (error) {
-      console.error('Fetch error (gagal menghubungi API):', error);
       const networkError: Message = {
         id: `${Date.now()}-nerror`,
         text: 'Gagal terhubung ke server. Periksa koneksi Anda atau coba lagi nanti.',
@@ -82,7 +66,6 @@ export default function Chatbox() {
       setMessages((prevMessages) => [...prevMessages, networkError]);
     } finally {
       setIsLoading(false);
-      // Fokus kembali ke input setelah bot merespons
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
@@ -94,64 +77,78 @@ export default function Chatbox() {
     return null;
   };
 
-   const getBubbleStyles = (sender: Message['sender']) => {
-    let baseStyles = "px-4 py-3 rounded-2xl max-w-[80%] shadow break-words";
+  const getBubbleStyles = (sender: Message['sender']) => {
+    let baseStyles = "px-4 py-3 rounded-2xl max-w-[80%] shadow-md break-words"; // Sedikit shadow lebih jelas
     if (sender === 'user') {
       return `${baseStyles} bg-sky-500 text-white self-end rounded-br-none`;
     } else if (sender === 'bot') {
       return `${baseStyles} bg-slate-200 text-slate-800 self-start rounded-bl-none`;
-    } else { // error
+    } else {
       return `${baseStyles} bg-red-100 text-red-700 self-start rounded-bl-none border border-red-300`;
     }
   };
-
 
   return (
     <div className="flex flex-col h-full w-full bg-white">
       <div className="flex-grow p-4 space-y-4 overflow-y-auto">
         {messages.map((msg) => (
-          <div key={msg.id} className={`flex items-end space-x-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.sender !== 'user' && (
-              <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
-                msg.sender === 'bot' ? 'bg-sky-500' : 'bg-red-500'
-              }`}>
-                {getSenderIcon(msg.sender)}
+          // <<<< 2. Bungkus setiap pesan dengan Transition
+          <Transition
+            key={msg.id}
+            show={true}
+            appear={true}
+            as={React.Fragment}
+            enter="transform transition ease-out duration-300"
+            enterFrom={msg.sender === 'user' ? "opacity-0 translate-x-10" : "opacity-0 -translate-x-10"}
+            enterTo="opacity-100 translate-x-0"
+          >
+            <div className={`flex items-end space-x-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {msg.sender !== 'user' && (
+                <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
+                  msg.sender === 'bot' ? 'bg-sky-100' : 'bg-red-100' // Latar ikon bot/error lebih terang
+                }`}>
+                  {getSenderIcon(msg.sender)}
+                </div>
+              )}
+              <div className={getBubbleStyles(msg.sender)}>
+                {msg.text.split('\n').map((line, index, arr) => (
+                  <span key={index}>
+                    {line}
+                    {index < arr.length - 1 && <br />}
+                  </span>
+                ))}
               </div>
-            )}
-            <div className={getBubbleStyles(msg.sender)}>
-              {/* Handle newlines in message text */}
-              {msg.text.split('\n').map((line, index, arr) => (
-                <span key={index}>
-                  {line}
-                  {index < arr.length - 1 && <br />}
-                </span>
-              ))}
+              {msg.sender === 'user' && (
+                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-slate-500 flex items-center justify-center"> {/* Latar ikon user lebih gelap */}
+                  {getSenderIcon(msg.sender)}
+                </div>
+              )}
             </div>
-             {msg.sender === 'user' && (
-              <div className="flex-shrink-0 h-8 w-8 rounded-full bg-slate-600 flex items-center justify-center">
-                {getSenderIcon(msg.sender)}
-              </div>
-            )}
-          </div>
+          </Transition>
         ))}
         <div ref={messagesEndRef} />
       </div>
       <form onSubmit={handleSubmit} className="p-4 border-t border-slate-200 bg-slate-50">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3"> {/* Sedikit menambah space */}
           <input
             ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ketik pertanyaan Anda..."
+            placeholder="Ketik pertanyaan Anda di sini..."
             disabled={isLoading}
-            className="flex-grow p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition"
+            className="flex-grow p-3 border border-slate-300 rounded-xl 
+                       focus:ring-2 focus:ring-sky-400 focus:border-transparent 
+                       outline-none transition text-slate-800 placeholder-slate-500" // Warna sudah ditambahkan
             onKeyPress={(e) => { if (e.key === 'Enter' && !isLoading && inputValue.trim()) handleSubmit(e as any);}}
           />
           <button 
             type="submit" 
             disabled={isLoading || !inputValue.trim()} 
-            className="p-3 bg-sky-500 text-white rounded-xl hover:bg-sky-600 disabled:bg-slate-300 transition flex items-center justify-center"
+            className="p-3 bg-sky-500 text-white rounded-xl 
+                       hover:bg-sky-600 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-500
+                       disabled:bg-slate-400 disabled:cursor-not-allowed 
+                       transition-colors duration-150 flex items-center justify-center transform active:scale-95" // Perbaikan styling tombol
             aria-label="Kirim pesan"
           >
             {isLoading ? (

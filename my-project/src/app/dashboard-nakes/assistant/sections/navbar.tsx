@@ -59,9 +59,9 @@ const Navbar: React.FC = () => {
   };
 
   const navLinks = [
-    { href: "#Jadwal", label: "Jadwal" },
-    { href: "#Profil", label: "Profil" },
-    { href: "#Pelatihan", label: "Pelatihan" },
+    { href: "../dashboard-nakes/#Jadwal", label: "Jadwal" },
+    { href: "../dashboard-nakes/#Profil", label: "Profil" },
+    { href: "../dashboard-nakes/#Pelatihan", label: "Pelatihan" },
     { href: "../dashboard-nakes/assistant", label: "Asisten AI" }
   ];
 
