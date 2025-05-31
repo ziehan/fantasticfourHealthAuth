@@ -1,169 +1,182 @@
+// components/Navbar.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Menu, X, ChevronDown, Zap, Shield, Users, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ShieldCheckIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Transition } from '@headlessui/react'; // Untuk animasi mobile menu yang lebih halus
+// Removed unused or incorrect imports:
+// import { a, b, nav } from 'framer-motion/client'; // Remove if not used
+// import { link } from 'fs'; // Incorrect for client-side
+// import { text } from 'stream/consumers'; // Incorrect for client-side
 
-const ModernNavbar = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+// Warna yang akan kita gunakan
+const bluePrimary = '#1E47A0';   // Biru medium untuk teks utama & ikon
+const blueHover = '#3764C3';     // Biru untuk hover link
+const darkText = '#1A0A3B';      // Teks paling gelap untuk logo
+const paleCyan = '#E0F2F3';      // Latar tombol logout
+const lightCyan = '#A0D0D5';     // Latar hover tombol logout & aksen
+const separatorColor = '#A0D0D5'; // Warna separator mobile menu
+
+interface NavLinkProps {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}
+
+const NavLink: React.FC<NavLinkProps> = ({ href, children, className, onClick }) => {
+  return (
+    <a
+      href={href}
+      onClick={onClick}
+      // Updated to use defined color variables and correct template literal syntax
+      className={`text-[${bluePrimary}] hover:text-[${blueHover}] px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 whitespace-nowrap hover:bg-white/20 ${className || ''}`}
+    >
+      {children}
+    </a>
+  );
+};
+
+
+const HealthAuthLogo: React.FC = () => (
+  <a href="instagram.com/mrshlaf" className="flex items-center group">
+    {/* Corrected className to use template literals for JS variables */}
+    <ShieldCheckIcon className={`h-8 w-8 text-[${bluePrimary}] group-hover:text-[${blueHover}] transition-colors duration-300`} />
+    <span className={`ml-2.5 text-xl font-bold text-[${darkText}] group-hover:text-[${bluePrimary}] transition-colors duration-300`}>
+      HealthAuth
+    </span>
+  </a>
+);
+
+const Navbar: React.FC = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navbarRef = useRef<HTMLElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = () => {
+    alert('Logout clicked!');
+    setMobileMenuOpen(false);
+  };
+
+  const navLinks = [
+    { href: "/components/about", label: "About" },
+    { href: "/pelatihan", label: "Pelatihan" },
+    { href: "/log-harian", label: "Input Log Harian dan Self-Assessment" },
+  ];
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        mobileMenuOpen &&
+        navbarRef.current && !navbarRef.current.contains(event.target as Node) &&
+        mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)
+      ) {
+        setMobileMenuOpen(false);
+      }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [mobileMenuOpen]);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled 
-        ? 'bg-white/80 backdrop-blur-lg border-b border-gray-200/20 shadow-lg' 
-        : 'bg-transparent'
-    }`}>
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo */}
-          <div className="flex items-center">
-            <div className="flex items-center space-x-2 group cursor-pointer">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-                HealthHack
-              </span>
-            </div>
-          </div>
+    <nav
+      ref={navbarRef}
+      className={`fixed top-4 left-1/2 -translate-x-1/2
+                   bg-white/70 backdrop-blur-xl shadow-2xl rounded-full
+                   flex items-center justify-between
+                   py-3 sm:py-3.5 px-4 sm:px-6 md:px-8
+                   w-[calc(100%-2rem)] max-w-6xl z-50 transition-all duration-300 ease-in-out`}
+    >
+      <HealthAuthLogo />
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
-            <a href="about" className="group relative px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-300">
-              <span className="relative z-10">Tentang</span>
-              <div className="absolute inset-0 bg-blue-50 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300 origin-center"></div>
-            </a>
-            
-            {/* Features Dropdown */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="group relative flex items-center space-x-1 px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-300"
+      {/* Desktop Nav Links */}
+      <div className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+        {navLinks.map((link) => (
+          <NavLink key={link.label} href={link.href}>
+            {link.label}
+          </NavLink>
+        ))}
+      </div>
+
+      {/* Logout Button for Desktop */}
+      <div className="hidden lg:block">
+        <button
+          onClick={handleLogout}
+          // Corrected className to use template literals
+          className={`bg-[${paleCyan}] text-[${bluePrimary}] hover:bg-[${lightCyan}]
+                      font-semibold py-2 px-6 rounded-full text-sm transition-all duration-300 ease-in-out
+                      focus:outline-none focus:ring-2 focus:ring-[${bluePrimary}] focus:ring-opacity-50 transform hover:scale-105`}
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* Mobile Menu Button */}
+      <div className="lg:hidden">
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          // Corrected className to use template literals
+          className={`text-[${bluePrimary}] hover:text-[${blueHover}] focus:outline-none p-2 rounded-full hover:bg-white/30 transition-colors`}
+          aria-label="Open menu"
+          aria-expanded={mobileMenuOpen}
+        >
+          {mobileMenuOpen ? (
+            <XMarkIcon className="h-7 w-7" />
+          ) : (
+            <Bars3Icon className="h-7 w-7" />
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Menu Dropdown with Transition */}
+      <Transition
+        show={mobileMenuOpen}
+        as={React.Fragment}
+        enter="transition ease-out duration-200"
+        enterFrom="opacity-0 translate-y-1"
+        enterTo="opacity-100 translate-y-0"
+        leave="transition ease-in duration-150"
+        leaveFrom="opacity-100 translate-y-0"
+        leaveTo="opacity-0 translate-y-1"
+      >
+        <div
+          ref={mobileMenuRef}
+          className={`lg:hidden absolute top-[calc(100%+0.75rem)] left-0 right-0
+                      bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl
+                      mx-auto w-[calc(100%-1rem)] max-w-md
+                      py-4 z-40 border border-gray-200/50`}
+        >
+          <div className="flex flex-col space-y-1 px-4">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.label}
+                href={link.href}
+                // Corrected className to use template literals
+                className={`block text-center py-2.5 !whitespace-normal border-b border-[${separatorColor}]/30 last:border-b-0`}
+                onClick={() => setMobileMenuOpen(false)}
               >
-                <span className="relative z-10">Fitur</span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                <div className="absolute inset-0 bg-blue-50 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300 origin-center"></div>
+                {link.label}
+              </NavLink>
+            ))}
+            <div className="pt-3">
+              <button
+                onClick={handleLogout}
+                // Corrected className to use template literals
+                className={`w-full bg-[${paleCyan}] text-[${bluePrimary}] hover:bg-[${lightCyan}]
+                              font-semibold py-2.5 px-6 rounded-full text-sm transition-all
+                              duration-300 ease-in-out focus:outline-none focus:ring-2
+                              focus:ring-[${bluePrimary}] focus:ring-opacity-50`}
+              >
+                Logout
               </button>
-              
-              {/* Dropdown Menu */}
-              <div className={`absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-200/20 transition-all duration-300 ${
-                isDropdownOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
-              }`}>
-                <div className="p-2">
-                  <a href="#ai-diagnosis" className="flex items-center space-x-3 p-3 rounded-xl hover:bg-blue-50 transition-colors duration-200 group">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 group-hover:text-blue-600">AI Diagnosis</div>
-                      <div className="text-sm text-gray-500">Deteksi dini penyakit</div>
-                    </div>
-                  </a>
-                  <a href="#telemedicine" className="flex items-center space-x-3 p-3 rounded-xl hover:bg-blue-50 transition-colors duration-200 group">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                      <Shield className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 group-hover:text-blue-600">Telemedicine</div>
-                      <div className="text-sm text-gray-500">Konsultasi online</div>
-                    </div>
-                  </a>
-                  <a href="#community" className="flex items-center space-x-3 p-3 rounded-xl hover:bg-blue-50 transition-colors duration-200 group">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <Users className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 group-hover:text-blue-600">Komunitas</div>
-                      <div className="text-sm text-gray-500">Forum diskusi sehat</div>
-                    </div>
-                  </a>
-                </div>
-              </div>
             </div>
-
-            <a href="#pricing" className="group relative px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-300">
-              <span className="relative z-10">Harga</span>
-              <div className="absolute inset-0 bg-blue-50 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300 origin-center"></div>
-            </a>
-            
-            <a href="#contact" className="group relative px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-300">
-              <span className="relative z-10">Kontak</span>
-              <div className="absolute inset-0 bg-blue-50 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300 origin-center"></div>
-            </a>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="hidden lg:flex items-center space-x-3">
-            <a href="login" className="px-4 py-2 text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium">
-              Masuk
-            </a>
-            <a href="signup" className="group relative px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/25 hover:-translate-y-0.5">
-              <span className="relative z-10 flex items-center space-x-2">
-                <span>Daftar Gratis</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-purple-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </a>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6 text-gray-700" />
-            ) : (
-              <Menu className="w-6 h-6 text-gray-700" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      <div className={`lg:hidden transition-all duration-300 ${
-        isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-      } overflow-hidden bg-white/95 backdrop-blur-lg border-t border-gray-200/20`}>
-        <div className="px-6 py-4 space-y-3">
-          <a href="#about" className="block py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200">
-            Tentang
-          </a>
-          <a href="#ai-diagnosis" className="block py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 pl-4">
-            AI Diagnosis
-          </a>
-          <a href="#telemedicine" className="block py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 pl-4">
-            Telemedicine
-          </a>
-          <a href="#community" className="block py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 pl-4">
-            Komunitas
-          </a>
-          <a href="#pricing" className="block py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200">
-            Harga
-          </a>
-          <a href="#contact" className="block py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200">
-            Kontak
-          </a>
-          <div className="pt-4 border-t border-gray-200 space-y-3">
-            <a href="#login" className="block py-2 text-gray-700 hover:text-blue-600 transition-colors duration-200">
-              Masuk
-            </a>
-            <a href="#signup" className="block py-3 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-center">
-              Daftar Gratis
-            </a>
           </div>
         </div>
-      </div>
+      </Transition>
     </nav>
   );
 };
 
-export default ModernNavbar;
+export default Navbar;
