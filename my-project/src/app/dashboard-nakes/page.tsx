@@ -1,5 +1,8 @@
+// app/dashboard-nakes/page.tsx
 "use client";
 
+// Asumsi folder 'sections' ada di 'app/sections/'
+// Jika 'sections' ada di root proyek, gunakan '../../../sections/navbar'
 import Navbar from './sections/navbar';
 import Footer from './sections/footer';
 
@@ -38,8 +41,8 @@ const profileData = {
   workArea: "Kota Sehat & Sekitarnya",
   strNo: "STR123XYZ/001",
   sipNo: "SIP456ABC/002",
-  lastUpdated: "31 Mei 2025",
-  imageUrl: "https://via.placeholder.com/150/A0D0D5/1A0A3B?Text=Dr.Z",
+  lastUpdated: "Jumat, 31 Mei 2025", // Menggunakan format tanggal yang sama dengan currentDate
+  imageUrl: "[https://via.placeholder.com/150/A0D0D5/1A0A3B?Text=Dr.Z](https://via.placeholder.com/150/A0D0D5/1A0A3B?Text=Dr.Z)",
   skills: ["Penanganan Gawat Darurat", "USG Dasar", "Manajemen Pasien Kronis", "Konseling Kesehatan"],
   languages: ["Bahasa Indonesia (Native)", "English (Professional Working Proficiency)"],
 };
@@ -64,7 +67,7 @@ const initialTrainingModules = [
 
 const initialQuickStatsData = (completedToday: number) => [
   { id: 1, label: "Pasien Terjadwal Hari Ini", value: "8", icon: CalendarDaysIcon, color: "text-[#A0D0D5]" },
-  { id: 2, label: "Tugas Selesai Hari Ini", value: `${completedToday}/10`, icon: CheckCircleIcon, color: "text-[#E0F2F3]" }, // Contoh tugas
+  { id: 2, label: "Tugas Selesai Hari Ini", value: `${completedToday}/10`, icon: CheckCircleIcon, color: "text-[#E0F2F3]" },
   { id: 3, label: "Modul Prioritas Belum Selesai", value: "2", icon: PlayCircleIcon, color: "text-[#A0D0D5]" },
 ];
 
@@ -81,7 +84,6 @@ const initialScheduleData = [
 ];
 // --- End Data Dummy ---
 
-// Komponen Animasi Entri (Sama seperti sebelumnya)
 interface FadeInUpProps { children: React.ReactNode; delay?: string; duration?: string; className?: string; }
 const FadeInUp: React.FC<FadeInUpProps> = ({ children, delay = '', duration = 'duration-700', className = '' }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -96,12 +98,12 @@ const FadeInUp: React.FC<FadeInUpProps> = ({ children, delay = '', duration = 'd
   );
 };
 
-const FloatingParticles: React.FC = () => ( /* Sama seperti sebelumnya */
+const FloatingParticles: React.FC = () => (
   <div className="absolute inset-0 overflow-hidden -z-10">
     {[...Array(15)].map((_, i) => (
       <div
         key={i}
-        className="absolute bg-[#A0D0D5]/20 rounded-full animate-pulse-slower"
+        className="absolute bg-[#A0D0D5]/20 rounded-full animate-pulse-slower" // Pastikan 'animate-pulse-slower' ada di tailwind.config.js
         style={{
           width: `${Math.random() * 3 + 1}rem`, height: `${Math.random() * 3 + 1}rem`,
           left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`,
@@ -117,24 +119,37 @@ const DashboardNakesPage: React.FC = () => {
   const [currentDate, setCurrentDate] = useState('');
   const [scheduleFilter, setScheduleFilter] = useState('semua');
   const [moduleCategoryFilter, setModuleCategoryFilter] = useState('semua');
+  const [searchTerm, setSearchTerm] = useState(''); // Untuk search modul
 
   useEffect(() => {
     setCurrentQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-    setCurrentDate(new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+    const today = new Date();
+    setCurrentDate(today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+    
+    // Update 'lastUpdated' profile jika hari ini adalah tanggal yang sama untuk konsistensi
+    // Ini hanya untuk demo, di aplikasi nyata data ini datang dari backend
+    if (profileData.lastUpdated !== `${today.toLocaleDateString('id-ID', { weekday: 'long' })}, ${today.getDate()} ${today.toLocaleDateString('id-ID', { month: 'long' })} ${today.getFullYear()}`) {
+        // profileData.lastUpdated = `${today.toLocaleDateString('id-ID', { weekday: 'long' })}, ${today.getDate()} ${today.toLocaleDateString('id-ID', { month: 'long' })} ${today.getFullYear()}`;
+        // Sebaiknya tidak memutasi objek langsung seperti ini, tapi karena ini data dummy, untuk demo saja
+    }
+
   }, []);
   
   const completedTasksToday = useMemo(() => initialScheduleData.filter(item => item.status === 'selesai').length, []);
   const quickStatsData = useMemo(() => initialQuickStatsData(completedTasksToday), [completedTasksToday]);
 
-
   const filteredSchedule = useMemo(() => {
     if (scheduleFilter === 'penting') return initialScheduleData.filter(item => item.priority === 'penting' && item.status !== 'selesai');
     if (scheduleFilter === 'selesai') return initialScheduleData.filter(item => item.status === 'selesai');
-    return initialScheduleData.filter(item => item.status !== 'selesai'); // Default tampilkan yang belum selesai
+    // Default: tampilkan semua yang belum selesai, urutkan yang penting di atas
+    return initialScheduleData
+      .filter(item => item.status !== 'selesai')
+      .sort((a, b) => (a.priority === 'penting' ? -1 : 1) - (b.priority === 'penting' ? -1 : 1));
   }, [scheduleFilter]);
   
-  const scheduleDisplayData = scheduleFilter === 'semua' ? initialScheduleData : filteredSchedule;
-
+  const scheduleDisplayData = scheduleFilter === 'semua' 
+    ? initialScheduleData.sort((a,b) => (a.status === 'selesai' ? 1 : -1) - (b.status === 'selesai' ? 1 : -1) || (a.priority === 'penting' ? -1 : 1) - (b.priority === 'penting' ? -1 : 1)) 
+    : filteredSchedule;
 
   const trainingModuleCategories = useMemo(() => {
     const categories = new Set(initialTrainingModules.map(module => module.category));
@@ -142,12 +157,23 @@ const DashboardNakesPage: React.FC = () => {
   }, []);
 
   const filteredTrainingModules = useMemo(() => {
-    if (moduleCategoryFilter === 'semua') return initialTrainingModules;
-    return initialTrainingModules.filter(module => module.category === moduleCategoryFilter);
-  }, [moduleCategoryFilter]);
+    let modules = initialTrainingModules;
+    if (moduleCategoryFilter !== 'semua') {
+      modules = modules.filter(module => module.category === moduleCategoryFilter);
+    }
+    if (searchTerm) {
+      modules = modules.filter(module => 
+        module.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        module.subtitle.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return modules;
+  }, [moduleCategoryFilter, searchTerm]);
 
   return (
-    <><Navbar />
+    <>
+      <Navbar /> {/* Pastikan path Navbar sudah benar */}
+      
       {/* === Bagian 1: Hero Greeting & Statistik Cepat === */}
       <section className="min-h-screen h-auto flex flex-col items-center justify-center bg-gradient-to-br from-[#1A0A3B] via-[#1E47A0] to-[#1A0A3B] text-[#E0F2F3] text-center p-6 relative overflow-hidden">
         <FloatingParticles />
@@ -207,7 +233,7 @@ const DashboardNakesPage: React.FC = () => {
                     ? 'bg-[#1A0A3B] text-white ring-2 ring-[#1E47A0]' 
                     : 'bg-white/70 text-[#1E47A0] hover:bg-[#A0D0D5]/50 hover:text-[#1A0A3B]'}`}
               >
-                {filter === 'semua' ? 'Semua Agenda' : filter === 'penting' ? 'Prioritas Utama' : 'Sudah Selesai'}
+                {filter === 'semua' ? 'Semua Agenda' : filter === 'penting' ? 'Prioritas Utama (Aktif)' : 'Sudah Selesai'}
               </button>
             ))}
           </FadeInUp>
@@ -217,7 +243,7 @@ const DashboardNakesPage: React.FC = () => {
               <FadeInUp key={item.id} delay={`delay-[${index * 50 + 200}ms]`} duration="duration-500">
                 <div className={`flex items-center space-x-4 p-4 rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl relative
                   ${item.status === 'selesai' ? 'bg-gray-300/70 opacity-70' : item.priority === 'penting' ? 'bg-gradient-to-r from-[#A0D0D5]/80 to-[#E0F2F3]/90 border-l-4 border-[#1E47A0]' : 'bg-white/80 backdrop-blur-md border border-white/50'}`}>
-                  {item.status === 'selesai' && <div className="absolute inset-0 bg-black/5 rounded-xl"></div>}
+                  {item.status === 'selesai' && <div className="absolute inset-0 bg-black/5 rounded-xl pointer-events-none"></div>}
                   <div className={`p-2.5 rounded-full ${item.status === 'selesai' ? 'bg-gray-400/50' : item.priority === 'penting' ? 'bg-[#1E47A0]/20' : 'bg-[#A0D0D5]/30'}`}>
                     <CalendarDaysIcon className={`w-7 h-7 ${item.status === 'selesai' ? 'text-gray-600' : item.priority === 'penting' ? 'text-[#1E47A0]' : 'text-[#1A0A3B]/70'}`} />
                   </div>
@@ -233,7 +259,7 @@ const DashboardNakesPage: React.FC = () => {
               </FadeInUp>
             )) : (
               <FadeInUp delay="delay-[200ms]">
-                <p className="text-center text-gray-500 py-10">Tidak ada jadwal yang sesuai dengan filter ini.</p>
+                <p className="text-center text-gray-500 py-10 text-lg">Tidak ada jadwal yang sesuai dengan filter &quot;{scheduleFilter}&quot;.</p>
               </FadeInUp>
             )}
           </div>
@@ -270,7 +296,7 @@ const DashboardNakesPage: React.FC = () => {
                 <div className="md:col-span-2 space-y-2 text-sm text-[#1A0A3B]/90">
                   <h3 className="text-2xl sm:text-3xl font-bold text-[#1A0A3B] mb-4">{profileData.fullName}</h3>
                   {[
-                    { label: "Spesialisasi", value: profileData.specialization, icon: AcademicCapIcon },
+                    { label: "Spesialisasi", value: profileData.specialization },
                     { label: "NIK", value: profileData.nik },
                     { label: "TTL", value: profileData.birthPlaceDate },
                     { label: "Gender", value: profileData.gender },
@@ -320,10 +346,18 @@ const DashboardNakesPage: React.FC = () => {
 
           <FadeInUp delay="delay-[250ms]" className="mb-8 flex flex-col items-center">
             <div className="relative flex items-center shadow-xl rounded-full w-full max-w-xl mb-4">
-              <input type="search" placeholder="Cari modul pelatihan..."
+              <input 
+                type="search" 
+                placeholder="Cari modul berdasarkan judul atau deskripsi..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full py-4 px-7 pr-16 rounded-full border-2 border-transparent bg-[#E0F2F3]/90 backdrop-blur-md focus:ring-4 focus:ring-[#A0D0D5]/80 focus:border-[#A0D0D5] text-[#1A0A3B] placeholder-[#1E47A0]/70 transition-all duration-300"
               />
-              <button className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-gradient-to-r from-[#1A0A3B] to-[#1E47A0] text-white p-2.5 rounded-full hover:from-[#1E47A0] hover:to-[#1A0A3B] focus:outline-none transition-all duration-300 transform hover:scale-110 shadow-lg">
+              <button 
+                type="button" // Tambahkan type="button" untuk mencegah submit form jika ada
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-gradient-to-r from-[#1A0A3B] to-[#1E47A0] text-white p-2.5 rounded-full hover:from-[#1E47A0] hover:to-[#1A0A3B] focus:outline-none transition-all duration-300 transform hover:scale-110 shadow-lg"
+                onClick={() => setSearchTerm('')} // Contoh: tombol bisa untuk clear search
+              >
                 <MagnifyingGlassIcon className="w-5 h-5" />
               </button>
             </div>
@@ -355,6 +389,8 @@ const DashboardNakesPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center mb-4">
                     <p className="text-xs text-[#E0F2F3]/70">Durasi: {module.duration}</p>
+                    {/* Placeholder untuk progres atau status modul */}
+                    <span className="text-xs text-[#1A0A3B] bg-[#A0D0D5]/70 px-2 py-0.5 rounded-full">Baru</span>
                   </div>
                   <button className="w-full bg-gradient-to-r from-[#A0D0D5] to-[#E0F2F3] text-[#1A0A3B] font-bold py-3 px-4 rounded-lg hover:from-[#E0F2F3] hover:to-[#A0D0D5] focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50 transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center shadow-md">
                     <PlayCircleIcon className="w-6 h-6 mr-2" />
@@ -364,15 +400,17 @@ const DashboardNakesPage: React.FC = () => {
               </FadeInUp>
             )) : (
               <FadeInUp delay="delay-[200ms]" className="md:col-span-2 lg:col-span-3">
-                <p className="text-center text-[#A0D0D5]/80 py-20 text-xl">Tidak ada modul pelatihan yang sesuai dengan filter &quot;{moduleCategoryFilter}&quot;.</p>
+                <p className="text-center text-[#A0D0D5]/80 py-20 text-xl">
+                  Tidak ada modul pelatihan yang cocok dengan pencarian &quot;{searchTerm}&quot;
+                  {moduleCategoryFilter !== 'semua' && ` dalam kategori "${moduleCategoryFilter}"`}.
+                </p>
               </FadeInUp>
             )}
           </div>
         </div>
       </section>
-    <Footer />
+      <Footer /> {/* Pastikan path Footer sudah benar */}
     </>
-
   );
 };
 
