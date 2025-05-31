@@ -1,11 +1,12 @@
 // app/dashboard-nakes/page.tsx
 "use client";
 
+// Asumsi folder 'sections' ada di 'app/sections/'
+// Jika 'sections' ada di root proyek, gunakan '../../../sections/navbar'
 import Navbar from './sections/navbar';
 import Footer from './sections/footer';
 
 import React, { useEffect, useState, useMemo, FormEvent, ChangeEvent } from 'react';
-import Image from 'next/image'; // Digunakan untuk Next.js Image component
 import {
   UserCircleIcon,
   PencilSquareIcon,
@@ -22,12 +23,14 @@ import {
   LanguageIcon,
   TagIcon,
   XMarkIcon,
-  InformationCircleIcon,
-  ChatBubbleLeftEllipsisIcon,
+  InformationCircleIcon,      // Ditambahkan untuk modal asisten (pengganti Info dari lucide)
+  ChatBubbleLeftEllipsisIcon, // Ditambahkan untuk FAB dan modal asisten
 } from '@heroicons/react/24/outline';
 
+// Impor Chatbox Anda - PASTIKAN PATH INI BENAR
 import Chatbox from '@/components/chatbox'; // Sesuaikan path jika berbeda
 
+// --- Data Dummy (Diperbarui & Diperkaya) ---
 const profileData = {
   name: "Dr. Zulfahmi",
   fullName: "Dr. Faza Zulfahmi Ramadhan",
@@ -44,7 +47,7 @@ const profileData = {
   workArea: "Kota Sehat & Sekitarnya",
   strNo: "STR123XYZ/001",
   sipNo: "SIP456ABC/002",
-  lastUpdated: "Sabtu, 31 Mei 2025", // Diperbarui agar konsisten dengan format currentDate
+  lastUpdated: "Jumat, 31 Mei 2025",
   imageUrl: "https://via.placeholder.com/150/A0D0D5/1A0A3B?Text=Dr.Z",
   skills: ["Penanganan Gawat Darurat", "USG Dasar", "Manajemen Pasien Kronis", "Konseling Kesehatan"],
   languages: ["Bahasa Indonesia (Native)", "English (Professional Working Proficiency)"],
@@ -77,53 +80,36 @@ interface TrainingModule {
   status: 'Baru' | 'Dimulai' | 'Selesai';
 }
 
+
 const initialTrainingModulesData: Omit<TrainingModule, 'status'>[] = [
   { id: 1, title: "Komunikasi Empatik dalam Praktik", subtitle: "Membangun kepercayaan melalui komunikasi.", icon: UserCircleIcon, category: "Soft Skills", duration: "3 Jam" },
   { id: 2, title: "Manajemen Stres & Burnout Nakes", subtitle: "Strategi menjaga kesejahteraan mental.", icon: FaceSmileIcon, category: "Kesejahteraan", duration: "2 Jam" },
   { id: 3, title: "Update Pedoman Tatalaksana Diabetes Mellitus", subtitle: "Panduan terbaru untuk praktik terbaik.", icon: ClipboardDocumentCheckIcon, category: "Klinis", duration: "4 Jam" },
-  { id: 4, title: "Dasar-Dasar Elektrokardiogram (EKG)", subtitle: "Interpretasi EKG untuk diagnosis awal.", icon: AcademicCapIcon, category: "Klinis", duration: "5 Jam" },
-  { id: 5, title: "Teknik Resusitasi Jantung Paru (RJP) Terbaru", subtitle: "Update BLS & ALS sesuai AHA Guideline.", icon: ClipboardDocumentCheckIcon, category: "Kedaruratan", duration: "6 Jam" },
-  { id: 6, title: "Etika dan Hukum dalam Praktik Kedokteran", subtitle: "Memahami batasan dan tanggung jawab.", icon: UserCircleIcon, category: "Regulasi", duration: "3 Jam" },
-  { id: 7, title: "Penggunaan Sistem Informasi Kesehatan", subtitle: "Optimalisasi rekam medis elektronik.", icon: MagnifyingGlassIcon, category: "Manajemen", duration: "2 Jam"},
+  // ... modul lainnya
 ];
 
 const initialQuickStatsData = (completedToday: number, totalScheduled: number, priorityModules: number) => [
-  { id: 1, label: "Jadwal Aktif Hari Ini", value: `${totalScheduled - completedToday}`, icon: CalendarDaysIcon, color: "text-[#A0D0D5]" },
+  { id: 1, label: "Pasien Terjadwal Hari Ini", value: `${totalScheduled}`, icon: CalendarDaysIcon, color: "text-[#A0D0D5]" },
   { id: 2, label: "Tugas Selesai Hari Ini", value: `${completedToday}/${totalScheduled > 0 ? totalScheduled : '-'}`, icon: CheckCircleIcon, color: "text-[#E0F2F3]" },
-  { id: 3, label: "Modul Perlu Dipelajari", value: `${priorityModules}`, icon: PlayCircleIcon, color: "text-[#A0D0D5]" },
+  { id: 3, label: "Modul Prioritas Belum Selesai", value: `${priorityModules}`, icon: PlayCircleIcon, color: "text-[#A0D0D5]" },
 ];
 
 const initialScheduleData: ScheduleItem[] = [
   { id: 1, time: "08:00 - 09:00", title: "Persiapan & Review Rekam Medis Pasien", type: "Persiapan", priority: "penting", status: "normal" },
   { id: 2, time: "09:00 - 10:00", title: "Konsultasi Tn. Agus Setiawan", type: "Konsultasi", priority: "normal", status: "normal" },
   { id: 3, time: "10:00 - 10:30", title: "Telekonsultasi Ny. Budiarti", type: "Telemedisin", priority: "normal", status: "selesai" },
-  { id: 4, time: "10:30 - 11:00", title: "Rapat Tim Medis Mingguan", type: "Rapat", priority: "penting", status: "normal" },
-  { id: 5, time: "11:00 - 12:00", title: "Visite Pasien Ruang Mawar (Bed 1-5)", type: "Visite", priority: "penting", status: "normal" },
-  { id: 6, time: "13:00 - 15:00", title: "Praktik Poli Umum", type: "Praktik", priority: "normal", status: "normal" },
-  { id: 7, time: "15:00 - 15:30", title: "Follow-up Pasien Diabetes", type: "Follow-up", priority: "normal", status: "selesai" },
-  { id: 8, time: "15:30 - 16:30", title: "Administrasi & Laporan Harian", type: "Administrasi", priority: "rendah", status: "normal" },
-  { id: 9, time: "16:30 - 17:00", title: "Penyuluhan Kesehatan Komunitas (Online)", type: "Penyuluhan", priority: "penting", status: "selesai"},
+  // ... agenda lainnya
 ];
 
-interface FadeInUpProps {
-  children: React.ReactNode;
-  delay?: string;
-  duration?: string;
-  className?: string;
-  style?: React.CSSProperties;
-}
-
-const FadeInUp: React.FC<FadeInUpProps> = ({ children, delay = '', duration = 'duration-700', className = '', style }) => {
+interface FadeInUpProps { children: React.ReactNode; delay?: string; duration?: string; className?: string; }
+const FadeInUp: React.FC<FadeInUpProps> = ({ children, delay = '', duration = 'duration-700', className = '' }) => {
   const [isVisible, setIsVisible] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 50);
     return () => clearTimeout(timer);
   }, []);
   return (
-    <div
-      className={`transition-all ease-out ${duration} ${delay} ${className} ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-      style={style}
-    >
+    <div className={`transition-all ease-out ${duration} ${delay} ${className} ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
       {children}
     </div>
   );
@@ -145,12 +131,6 @@ const FloatingParticles: React.FC = () => (
   </div>
 );
 
-interface ProfileDetailItem {
-  label: string;
-  value: string;
-  fullWidth?: boolean;
-}
-
 const DashboardNakesPage: React.FC = () => {
   const [currentQuote, setCurrentQuote] = useState('');
   const [currentDate, setCurrentDate] = useState('');
@@ -168,24 +148,15 @@ const DashboardNakesPage: React.FC = () => {
   const [newAgenda, setNewAgenda] = useState({
     time: '', title: '', type: 'Umum', priority: 'normal' as ScheduleItem['priority'],
   });
-  const [agendaAddedMessage, setAgendaAddedMessage] = useState<string | null>(null);
 
+  // State untuk modal Asisten AI
   const [isAssistantModalOpen, setIsAssistantModalOpen] = useState(false);
+
 
   useEffect(() => {
     setCurrentQuote(quotes[Math.floor(Math.random() * quotes.length)]);
     const today = new Date();
     setCurrentDate(today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
-    
-    // Perbarui profileData.lastUpdated agar sesuai format dan tanggal terkini (hanya untuk demo)
-    // Di aplikasi nyata, ini akan datang dari backend
-    const formattedTodayForProfile = today.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    if (profileData.lastUpdated !== formattedTodayForProfile) {
-        // Untuk demo, kita update. Di dunia nyata, ini tidak boleh dilakukan pada const.
-        // profileData.lastUpdated = formattedTodayForProfile; // Ini akan error jika profileData adalah const import
-        // Solusi lebih baik: Jika profileData adalah state, update state tersebut. Atau, biarkan apa adanya.
-        // Untuk saat ini, saya akan biarkan, asumsikan string awal sudah benar atau dari backend.
-    }
   }, []);
   
   const completedTasksToday = useMemo(() => scheduleData.filter(item => item.status === 'selesai').length, [scheduleData]);
@@ -208,9 +179,7 @@ const DashboardNakesPage: React.FC = () => {
         if (a.status !== 'selesai' && b.status === 'selesai') return -1;
         if (a.priority === 'penting' && b.priority !== 'penting') return -1;
         if (a.priority !== 'penting' && b.priority === 'penting') return 1;
-        const timeA = parseInt(a.time.split(':')[0]);
-        const timeB = parseInt(b.time.split(':')[0]);
-        return timeA - timeB;
+        return 0;
       });
     }
     return filteredSchedule;
@@ -255,16 +224,16 @@ const DashboardNakesPage: React.FC = () => {
       id: newId, time: newAgenda.time, title: newAgenda.title, type: newAgenda.type,
       priority: newAgenda.priority as ScheduleItem['priority'], status: 'normal',
     };
-    setScheduleData(prevSchedule => [agendaToAdd, ...prevSchedule].sort((a, b) => parseInt(a.time.split(':')[0]) - parseInt(b.time.split(':')[0])));
+    setScheduleData(prevSchedule => [agendaToAdd, ...prevSchedule]);
     setIsAgendaModalOpen(false);
-    setAgendaAddedMessage("🎉 Agenda berhasil ditambahkan!");
-    setTimeout(() => setAgendaAddedMessage(null), 3000);
   };
 
   const handleStartLearning = (moduleId: number) => {
     setTrainingModules(prevModules =>
       prevModules.map(module => module.id === moduleId ? { ...module, status: 'Dimulai' } : module)
     );
+    const moduleTitle = trainingModules.find(m => m.id === moduleId)?.title;
+    alert(`Memulai modul: "${moduleTitle}"`);
   };
   
   const handleToggleAgendaStatus = (agendaId: number) => {
@@ -273,34 +242,24 @@ const DashboardNakesPage: React.FC = () => {
     );
   };
 
+  // Handler untuk modal Asisten AI
   const handleOpenAssistantModal = () => setIsAssistantModalOpen(true);
   const handleCloseAssistantModal = () => setIsAssistantModalOpen(false);
 
-  const agendaTypes = ["Persiapan", "Konsultasi", "Telemedisin", "Rapat", "Visite", "Praktik", "Follow-up", "Administrasi", "Penyuluhan", "Umum", "Lainnya"];
+  const agendaTypes = ["Persiapan", "Konsultasi", "Telemedisin", "Rapat", "Visite", "Praktik", "Follow-up", "Administrasi", "Penyuluhan", "Umum"];
   const agendaPriorities: { value: ScheduleItem['priority']; label: string }[] = [
     { value: 'penting', label: 'Penting' }, { value: 'normal', label: 'Normal' }, { value: 'rendah', label: 'Rendah' },
   ];
 
-  const profileDetails: ProfileDetailItem[] = [
-    { label: "Spesialisasi", value: profileData.specialization },
-    { label: "NIK", value: profileData.nik },
-    { label: "TTL", value: profileData.birthPlaceDate },
-    { label: "Gender", value: profileData.gender },
-    { label: "Email", value: profileData.email },
-    { label: "Telepon", value: profileData.phone },
-    { label: "Alamat", value: profileData.address, fullWidth: true },
-    { label: "No. STR", value: profileData.strNo },
-    { label: "No. SIP", value: profileData.sipNo },
-    { label: "Area Kerja", value: profileData.workArea },
-    { label: "FKTP", value: `${profileData.fktpName}, ${profileData.fktpAddress}` },
-  ];
-
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen"> {/* Wrapper utama untuk menjaga FAB di atas footer */}
       <Navbar />
       
-      <main className="flex-grow">
+      {/* Konten Utama Dashboard */}
+      <main className="flex-grow"> {/* flex-grow agar main content mengisi ruang */}
+        {/* === Bagian 1: Hero Greeting & Statistik Cepat === */}
         <section className="min-h-screen h-auto flex flex-col items-center justify-center bg-gradient-to-br from-[#1A0A3B] via-[#1E47A0] to-[#1A0A3B] text-[#E0F2F3] text-center p-6 relative overflow-hidden">
+          {/* ... (konten hero section tidak berubah signifikan) ... */}
           <FloatingParticles />
             <FadeInUp duration="duration-1000" className="w-full max-w-4xl">
             <p className="text-lg opacity-90 mb-2 text-[#A0D0D5]">{currentDate}</p>
@@ -321,7 +280,7 @@ const DashboardNakesPage: React.FC = () => {
             <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-3xl w-full">
             {quickStatsData.map((stat, index) => (
                 <FadeInUp key={stat.id} delay={`delay-[${500 + index * 100}ms]`} duration="duration-700">
-                <div className="bg-white/10 backdrop-blur-md p-5 rounded-xl border border-white/20 shadow-lg text-center h-full flex flex-col justify-center items-center hover:border-white/40 hover:bg-white/20 transition-all duration-300">
+                <div className="bg-white/10 backdrop-blur-md p-5 rounded-xl border border-white/20 shadow-lg text-center h-full flex flex-col justify-center items-center">
                     <stat.icon className={`w-10 h-10 mx-auto mb-3 ${stat.color}`} />
                     <p className="text-md font-medium text-[#E0F2F3]/80 leading-tight">{stat.label}</p>
                     <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
@@ -343,7 +302,9 @@ const DashboardNakesPage: React.FC = () => {
             </div>
         </section>
 
+        {/* === Bagian 2: Jadwal Saya === */}
         <section className="min-h-screen h-auto flex flex-col items-center justify-center bg-[#E0F2F3] p-6 sm:p-8" id='Jadwal'>
+            {/* ... (konten jadwal tidak berubah signifikan) ... */}
             <div className="w-full max-w-5xl my-auto">
             <FadeInUp className="text-center">
                 <h2 className="text-4xl sm:text-5xl font-bold text-[#1A0A3B] mb-3">Jadwal Anda Hari Ini</h2>
@@ -360,7 +321,7 @@ const DashboardNakesPage: React.FC = () => {
                         ? 'bg-[#1A0A3B] text-white ring-2 ring-[#1E47A0]' 
                         : 'bg-white/70 text-[#1E47A0] hover:bg-[#A0D0D5]/50 hover:text-[#1A0A3B]'}`}
                 >
-                    {filter === 'semua' ? 'Semua Agenda' : filter === 'penting' ? 'Prioritas Utama (Aktif)' : 'Sudah Selesai'}
+                    {filter === 'semua' ? 'Semua Agenda (Aktif & Selesai)' : filter === 'penting' ? 'Prioritas Utama (Aktif)' : 'Sudah Selesai'}
                 </button>
                 ))}
             </FadeInUp>
@@ -370,7 +331,7 @@ const DashboardNakesPage: React.FC = () => {
                 <FadeInUp key={item.id} delay={`delay-[${index * 50 + 200}ms]`} duration="duration-500">
                     <div 
                     className={`flex items-center space-x-4 p-4 rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl relative cursor-pointer group
-                        ${item.status === 'selesai' ? 'bg-gray-300/70 opacity-70 hover:opacity-90' : item.priority === 'penting' ? 'bg-gradient-to-r from-[#A0D0D5]/80 to-[#E0F2F3]/90 border-l-4 border-[#1E47A0] hover:from-[#A0D0D5] hover:to-[#E0F2F3]' : 'bg-white/80 backdrop-blur-md border border-white/50 hover:bg-white'}`}
+                        ${item.status === 'selesai' ? 'bg-gray-300/70 opacity-70' : item.priority === 'penting' ? 'bg-gradient-to-r from-[#A0D0D5]/80 to-[#E0F2F3]/90 border-l-4 border-[#1E47A0]' : 'bg-white/80 backdrop-blur-md border border-white/50'}`}
                     onClick={() => handleToggleAgendaStatus(item.id)} 
                     >
                     {item.status === 'selesai' && <div className="absolute inset-0 bg-black/5 rounded-xl pointer-events-none"></div>}
@@ -386,16 +347,16 @@ const DashboardNakesPage: React.FC = () => {
                         {item.type}
                     </span>
                     {item.status !== 'selesai' && (
-                        <CheckCircleIcon className="w-6 h-6 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" />
+                        <CheckCircleIcon className="w-6 h-6 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" title="Tandai Selesai"/>
                     )}
                     {item.status === 'selesai' && (
-                        <ClipboardDocumentCheckIcon className="w-6 h-6 text-gray-600 ml-2" />
+                        <ClipboardDocumentCheckIcon className="w-6 h-6 text-gray-600 ml-2" title="Sudah Selesai"/>
                     )}
                     </div>
                 </FadeInUp>
                 )) : (
                 <FadeInUp delay="delay-[200ms]">
-                    <p className="text-center text-gray-500 py-10 text-lg">Tidak ada agenda untuk filter &quot;{scheduleFilter}&quot;.</p>
+                    <p className="text-center text-gray-500 py-10 text-lg">Tidak ada jadwal yang sesuai dengan filter &quot;{scheduleFilter}&quot;.</p>
                 </FadeInUp>
                 )}
             </div>
@@ -411,7 +372,9 @@ const DashboardNakesPage: React.FC = () => {
             </div>
         </section>
 
+        {/* === Bagian 3: Preview Profil === */}
         <section className="min-h-screen h-auto flex flex-col items-center justify-center bg-[#A0D0D5] p-6 sm:p-8" id='Profil'>
+             {/* ... (konten profil tidak berubah signifikan) ... */}
             <FadeInUp className="w-full max-w-4xl my-auto">
             <div className="bg-clip-padding backdrop-filter backdrop-blur-2xl bg-[#E0F2F3]/80 border border-[#E0F2F3]/50 shadow-2xl rounded-3xl overflow-hidden">
                 <div className="p-6 sm:p-10">
@@ -420,13 +383,8 @@ const DashboardNakesPage: React.FC = () => {
                 </h2>
                 <div className="md:grid md:grid-cols-3 md:gap-x-8 items-start">
                     <div className="md:col-span-1 text-center md:text-left mb-8 md:mb-0 flex flex-col items-center md:items-start">
-                    <Image
-                        src={profileData.imageUrl}
-                        alt={`Foto ${profileData.fullName}`}
-                        width={150}
-                        height={150}
+                    <img src={profileData.imageUrl} alt={`Foto ${profileData.fullName}`}
                         className="w-40 h-40 sm:w-48 sm:h-48 rounded-full object-cover shadow-2xl border-4 border-[#E0F2F3] ring-2 ring-[#1E47A0]/50 transform transition-all duration-500 hover:scale-110 hover:rotate-3"
-                        unoptimized // Ditambahkan untuk mengatasi error runtime next/image tanpa konfigurasi domain
                     />
                     <button className="mt-6 text-sm flex items-center text-[#1E47A0] hover:text-[#1A0A3B] font-semibold transition group">
                         <PencilSquareIcon className="w-5 h-5 mr-1.5 transition-transform duration-300 group-hover:rotate-[-10deg]" />
@@ -438,7 +396,13 @@ const DashboardNakesPage: React.FC = () => {
                     </div>
                     <div className="md:col-span-2 space-y-2 text-sm text-[#1A0A3B]/90">
                     <h3 className="text-2xl sm:text-3xl font-bold text-[#1A0A3B] mb-4">{profileData.fullName}</h3>
-                    {profileDetails.map(item => (
+                    {[
+                        { label: "Spesialisasi", value: profileData.specialization },
+                        { label: "NIK", value: profileData.nik },
+                        { label: "TTL", value: profileData.birthPlaceDate },
+                        // ...data profil lainnya
+                        { label: "FKTP", value: `${profileData.fktpName}, ${profileData.fktpAddress}` },
+                    ].map(item => (
                         <p key={item.label} className={item.fullWidth ? "col-span-2" : ""}>
                         <span className="font-bold text-[#1E47A0] w-28 sm:w-36 inline-block">{item.label}:</span> {item.value}
                         </p>
@@ -463,7 +427,9 @@ const DashboardNakesPage: React.FC = () => {
             </FadeInUp>
         </section>
 
+        {/* === Bagian 4: Pusat Pelatihan === */}
         <section className="min-h-screen h-auto flex flex-col items-center bg-[#1E47A0] p-6 sm:p-8 pt-10 sm:pt-12 md:pt-16" id='Pelatihan'>
+            {/* ... (konten pelatihan tidak berubah signifikan) ... */}
             <div className="w-full max-w-6xl z-10">
             <FadeInUp>
                 <h2 className="text-4xl sm:text-5xl font-bold text-[#E0F2F3] text-center mb-3">Pusat Pelatihan</h2>
@@ -552,27 +518,24 @@ const DashboardNakesPage: React.FC = () => {
 
       <Footer />
 
-      {agendaAddedMessage && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#1E47A0] to-[#123A7A] text-white px-6 py-3 rounded-lg shadow-2xl z-[100] transition-all duration-300 ease-out animate-bounce">
-          {agendaAddedMessage}
-        </div>
-      )}
-
+      {/* Floating Action Button (FAB) untuk Asisten AI */}
       <button
         onClick={handleOpenAssistantModal}
         title="Buka Asisten AI"
-        className="fixed bottom-8 left-8 bg-gradient-to-r from-[#1E47A0] to-[#123A7A] text-white p-4 rounded-full shadow-xl hover:from-[#123A7A] hover:to-[#1E47A0] transform hover:scale-110 transition-all duration-300 ease-in-out z-40 animate-gentle-pulse"
+        className="fixed bottom-20 right-8 bg-gradient-to-r from-[#1E47A0] to-[#123A7A] text-white p-4 rounded-full shadow-xl hover:from-[#123A7A] hover:to-[#1E47A0] transform hover:scale-110 transition-all duration-300 ease-in-out z-40"
       >
         <ChatBubbleLeftEllipsisIcon className="w-7 h-7" />
       </button>
 
+      {/* Modal untuk Tambah Agenda Baru */}
       {isAgendaModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          {/* ... (konten modal tambah agenda tidak berubah) ... */}
           <FadeInUp duration="duration-300" className="bg-white rounded-xl shadow-2xl w-full max-w-md">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold text-[#1A0A3B]">Tambah Agenda Baru</h3>
-                <button onClick={() => setIsAgendaModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100">
+                <button onClick={() => setIsAgendaModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                   <XMarkIcon className="w-7 h-7"/>
                 </button>
               </div>
@@ -617,13 +580,11 @@ const DashboardNakesPage: React.FC = () => {
         </div>
       )}
 
+      {/* Modal untuk Asisten AI */}
       {isAssistantModalOpen && (
-        <div className="fixed inset-0 bg-[#1A0A3B]/80 backdrop-blur-lg flex items-center justify-center z-[60] p-4">
-          <FadeInUp
-            duration="duration-300"
-            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col"
-            style={{maxHeight: 'calc(100vh - 4rem)', height: '700px'}}
-          >
+        <div className="fixed inset-0 bg-[#1A0A3B]/80 backdrop-blur-lg flex items-center justify-center z-[60] p-4"> {/* Warna backdrop disesuaikan */}
+          <FadeInUp duration="duration-300" className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style={{maxHeight: 'calc(100vh - 4rem)', height: '700px'}}>
+            {/* Header Modal Asisten */}
             <div className="flex justify-between items-center p-4 sm:p-5 border-b border-[#A0D0D5]/50">
               <h3 className="text-xl font-bold text-[#1A0A3B] flex items-center">
                 <ChatBubbleLeftEllipsisIcon className="w-7 h-7 mr-3 text-[#1E47A0]" />
@@ -634,14 +595,15 @@ const DashboardNakesPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-4 sm:p-5 border-b border-[#A0D0D5]/30 bg-[#E0F2F3]/60">
+            {/* Konten Intro dari AssistantPage (disesuaikan stylingnya) */}
+            <div className="p-4 sm:p-5 border-b border-[#A0D0D5]/30 bg-[#E0F2F3]/60"> {/* Warna disesuaikan */}
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0 pt-1">
-                  <InformationCircleIcon className="h-7 w-7 text-[#1E47A0]" />
+                  <InformationCircleIcon className="h-7 w-7 text-[#1E47A0]" /> {/* Heroicon & warna disesuaikan */}
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-[#1A0A3B]">Selamat Datang, Dr. {profileData.name}!</h2>
-                  <p className="text-sm text-[#1A0A3B]/90 mt-1">
+                  <h2 className="text-lg font-semibold text-[#1A0A3B]">Selamat Datang, Dr. {profileData.name}!</h2> {/* Warna disesuaikan */}
+                  <p className="text-sm text-[#1A0A3B]/90 mt-1"> {/* Warna disesuaikan */}
                     Saya adalah asisten AI yang siap membantu menjawab pertanyaan Anda terkait SOP dan pedoman kesehatan.
                     Silakan ketik pertanyaan Anda di bawah.
                   </p>
@@ -649,11 +611,14 @@ const DashboardNakesPage: React.FC = () => {
               </div>
             </div>
             
+            {/* Komponen Chatbox Anda */}
             <div className="flex-grow flex flex-col p-1 sm:p-2 md:p-4 overflow-y-auto custom-scrollbar">
+              {/* Pastikan Chatbox dapat menangani flex-grow dan scrolling internal jika perlu */}
               <Chatbox /> 
             </div>
+             {/* Footer kecil di dalam modal jika diperlukan */}
             <div className="p-3 border-t border-[#A0D0D5]/30 bg-[#E0F2F3]/60 text-xs text-center text-[#1A0A3B]/70">
-               Health Auth AI Assistant {/* Branding Diubah */}
+               SIAGA 3T+ AI Assistant
             </div>
           </FadeInUp>
         </div>
