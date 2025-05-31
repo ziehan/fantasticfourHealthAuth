@@ -53,8 +53,8 @@ const Navbar: React.FC = () => {
   const navbarRef = useRef<HTMLElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  const handleLogout = () => {
-    alert('Login clicked!');
+const handleLogout = () => {
+    window.location.href = "/login";
     setMobileMenuOpen(false);
   };
 

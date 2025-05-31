@@ -264,7 +264,7 @@ const DashboardNakesPage: React.FC = () => {
             <FadeInUp duration="duration-1000" className="w-full max-w-4xl">
             <p className="text-lg opacity-90 mb-2 text-[#A0D0D5]">{currentDate}</p>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight">
-                Halo {profileData.name}
+                Halo Dokter!
             </h1>
             </FadeInUp>
             <FadeInUp delay="delay-[200ms]" duration="duration-1000" className="w-full max-w-4xl">
