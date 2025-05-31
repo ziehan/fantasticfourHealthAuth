@@ -206,9 +206,13 @@ const DashboardNakesPage: React.FC = () => {
         </div>
 
         <FadeInUp delay="delay-[800ms]" duration="duration-1000">
-          <button className="mt-12 bg-[#A0D0D5] text-[#1A0A3B] font-bold py-3.5 px-12 rounded-lg shadow-xl hover:bg-[#E0F2F3] transform hover:scale-105 transition-all duration-300 ease-in-out text-lg focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50">
-            Isi Log Harian Anda
-          </button>
+          <button
+  className="mt-12 bg-[#A0D0D5] text-[#1A0A3B] font-bold py-3.5 px-12 rounded-lg shadow-xl hover:bg-[#E0F2F3] transform hover:scale-105 transition-all duration-300 ease-in-out text-lg focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50"
+  onClick={() => window.location.href = "./dashboard-nakes/kuesioner"}
+>
+  Isi Log Harian Anda
+</button>
+
         </FadeInUp>
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce opacity-70">
           <ChevronDownIcon className="w-10 h-10 text-[#A0D0D5]" />
