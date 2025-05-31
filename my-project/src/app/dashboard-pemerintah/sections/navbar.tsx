@@ -54,9 +54,9 @@ const Navbar: React.FC = () => {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
-    alert('Logout clicked!');
-    setMobileMenuOpen(false);
-  };
+      window.location.href = "/";
+      setMobileMenuOpen(false);
+    };
 
   const navLinks = [
     { href: "#Data", label: "Pemetaan Data" },
