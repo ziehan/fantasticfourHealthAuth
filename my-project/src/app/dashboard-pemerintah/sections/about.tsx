@@ -101,7 +101,7 @@ const About: React.FC = () => {
   ];
 
   return (
-    <section className="min-h-screen py-20 lg:py-28 bg-[#F0F7F8] text-[#1A0A3B] relative overflow-hidden" id='About'>
+    <section className="min-h-screen py-20 lg:py-28 bg-[#F0F7F8] text-[#1A0A3B] relative overflow-hidden">
       <FloatingParticles particleColor="bg-[#A0D0D5]/30" count={8} className="opacity-50"/>
       {/* Decorative Shapes */}
       <div aria-hidden="true" className="absolute top-0 -left-1/4 w-1/2 h-1/2 bg-gradient-to-br from-[#A0D0D5]/20 to-transparent rounded-full filter blur-3xl animate-pulse-slow"></div>

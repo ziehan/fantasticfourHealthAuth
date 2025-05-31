@@ -93,7 +93,7 @@ const Footer: React.FC<FooterProps> = ({ id }) => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer id='Kontak' className={`bg-[${footerTheme.colors.background}] text-[${footerTheme.colors.textPrimary}] pt-16 pb-8 relative`}>
+    <footer id={id} className={`bg-[${footerTheme.colors.background}] text-[${footerTheme.colors.textPrimary}] pt-16 pb-8 relative`}>
       <div className="container mx-auto max-w-screen-xl px-6 lg:px-8">
         {/* Bagian Atas Footer: Logo, Deskripsi, Link Kolom */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-10 md:gap-8 mb-12">

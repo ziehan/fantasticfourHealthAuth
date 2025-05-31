@@ -171,7 +171,7 @@ const Qna: React.FC = () => {
   };
 
   return (
-    <section id='Faq' className={`min-h-screen py-20 lg:py-28 bg-[${colors.background}] text-[${colors.primaryDark}] relative overflow-hidden`}>
+    <section className={`min-h-screen py-20 lg:py-28 bg-[${colors.background}] text-[${colors.primaryDark}] relative overflow-hidden`}>
       <FloatingParticles particleColor={`${colors.accentCyan}/20`} count={6} className="opacity-40"/>
       {/* Decorative Shapes - Subtle */}
       <div aria-hidden="true" className={`absolute top-1/4 -right-1/4 w-1/2 h-1/2 bg-gradient-to-bl from-[${colors.primaryBlue}]/5 to-transparent rounded-full filter blur-3xl animate-pulse-slower opacity-50`}></div>
