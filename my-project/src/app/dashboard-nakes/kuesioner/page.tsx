@@ -1,14 +1,12 @@
-// app/log-harian-nakes/page.tsx atau pages/log-harian-nakes.tsx
+// app/log-harian-nakes/page.tsx
 "use client";
 
-// PASTIKAN PATH INI BENAR SESUAI STRUKTUR PROYEK ANDA
-// Jika Navbar/Footer ada di components/sections di root: import Navbar from '@/components/sections/navbar';
-// Jika ada di app/components/sections: import Navbar from '@/app/components/sections/navbar';
+import { supabase } from '../../../lib/supabase';
 import Navbar from './sections/navbar';
 import Footer from './sections/footer';
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
-import { useRouter } from 'next/navigation'; // Ditambahkan untuk navigasi
+import { useRouter } from 'next/navigation';
 import {
   CalendarDaysIcon,
   ClockIcon,
@@ -42,11 +40,11 @@ interface Option {
 }
 
 interface QuestionProps {
-  id: string;
+  id: keyof FormData;
   label: string;
   description?: string;
   options: Option[];
-  type: 'radio' | 'checkbox' | 'scale';
+  type: 'radio' | 'checkbox';
   currentValue: string | string[];
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   icon?: React.ElementType;
@@ -60,12 +58,12 @@ const QuestionGroup: React.FC<QuestionProps> = ({ id, label, description, option
         {label}
       </label>
       {description && <p className="text-sm text-[#1A0A3B]/80 mb-3">{description}</p>}
-      <div className={`grid ${type === 'checkbox' || options.length > 4 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'} gap-x-6 gap-y-4`}>
+      <div className={`grid ${type === 'checkbox' || options.length > 3 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'} gap-x-6 gap-y-4`}>
         {options.map((option) => (
           <label key={option.value} htmlFor={`${id}-${option.value}`} className="flex items-center space-x-3 p-3.5 border border-[#A0D0D5]/70 rounded-lg hover:border-[#1E47A0] hover:bg-[#E0F2F3]/70 transition-all cursor-pointer shadow-sm hover:shadow-md">
             <input
               id={`${id}-${option.value}`}
-              type={type === 'checkbox' ? 'checkbox' : 'radio'}
+              type={type}
               name={id}
               value={option.value}
               checked={type === 'checkbox' ? (currentValue as string[]).includes(option.value) : currentValue === option.value}
@@ -102,48 +100,108 @@ interface FormData {
 }
 
 const LogHarianNakesPage: React.FC = () => {
-  const router = useRouter(); // Ditambahkan untuk navigasi
+  const router = useRouter();
   const initialFormData: FormData = {
-    shiftKerja: '', jamKerja: '', rasioNakesPasien: '', istirahatCukup: '', kualitasTidur: '',
-    tingkatEnergi: '', kondisiEmosional: '', rasaTerburuBuru: '', gejalaFisik: [], dukunganRekanKerja: '',
-    waktuPribadi: '', tingkatStresPekerjaan: '', butuhBantuan: '', upayaJagaKesehatan: '',
+    shiftKerja: '',
+    jamKerja: '',
+    rasioNakesPasien: '',
+    istirahatCukup: '',
+    kualitasTidur: '',
+    tingkatEnergi: '',
+    kondisiEmosional: '',
+    rasaTerburuBuru: '',
+    gejalaFisik: [],
+    dukunganRekanKerja: '',
+    waktuPribadi: '',
+    tingkatStresPekerjaan: '',
+    butuhBantuan: '',
+    upayaJagaKesehatan: '',
   };
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [currentDate, setCurrentDate] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    setCurrentDate(new Date().toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }));
+    const today = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    };
+    setCurrentDate(today.toLocaleDateString('id-ID', options));
   }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked } = e.target as HTMLInputElement & { name: keyof FormData };
+    
     if (type === 'checkbox') {
       setFormData(prev => {
-        const list = (prev[name as keyof FormData] as string[]) || [];
+        const currentValues = (prev[name] as string[]) || [];
+        let newValues: string[];
+        
         if (checked) {
           if (value === "Tidak Ada Keluhan") {
-            return { ...prev, [name]: [value] };
+            newValues = ["Tidak Ada Keluhan"];
+          } else {
+            newValues = [...currentValues.filter(item => item !== "Tidak Ada Keluhan"), value];
           }
-          const newList = list.filter(item => item !== "Tidak Ada Keluhan");
-          return { ...prev, [name]: [...newList, value] };
         } else {
-          return { ...prev, [name]: list.filter(item => item !== value) };
+          newValues = currentValues.filter(item => item !== value);
         }
+        
+        return { ...prev, [name]: newValues };
       });
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("Log Harian Nakes Disubmit:", formData);
-    alert("Log harian berhasil dikirim! (Data di console)"); // Alert yang sudah ada dipertahankan
-    // setFormData(initialFormData); // Reset form, bisa dipertimbangkan apakah perlu sebelum redirect
+    setIsSubmitting(true);
 
-    // Navigasi ke halaman dashboard-nakes
-    // Pastikan '/dashboard-nakes' adalah path yang benar sesuai struktur routing Anda
-    router.push('/dashboard-nakes');
+    // Transform data to match database column names
+    const dataToSubmit = {
+      shift_kerja: formData.shiftKerja,
+      jam_kerja: formData.jamKerja,
+      rasio_nakes_pasien: formData.rasioNakesPasien,
+      istirahat_cukup: formData.istirahatCukup,
+      kualitas_tidur: formData.kualitasTidur,
+      tingkat_energi: formData.tingkatEnergi,
+      kondisi_emosional: formData.kondisiEmosional,
+      rasa_terburu_buru: formData.rasaTerburuBuru,
+      gejala_fisik: formData.gejalaFisik,
+      dukungan_rekan_kerja: formData.dukunganRekanKerja,
+      waktu_pribadi: formData.waktuPribadi,
+      tingkat_stres_pekerjaan: formData.tingkatStresPekerjaan,
+      butuh_bantuan: formData.butuhBantuan,
+      upaya_jaga_kesehatan: formData.upayaJagaKesehatan
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('log_harian_nakes')
+        .insert([dataToSubmit])
+        .select();
+
+      if (error) {
+        console.error("Error inserting data to Supabase:", error);
+        alert(`Gagal mengirim log harian: ${error.message}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log("Data inserted successfully:", data);
+      alert("Log harian berhasil dikirim dan disimpan ke database!");
+      router.push('/dashboard-nakes');
+
+    } catch (error) {
+      console.error("Unexpected error during submission:", error);
+      alert("Terjadi kesalahan yang tidak terduga saat mengirim data.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const sectionTitleClass = "text-xl sm:text-2xl font-bold text-[#1A0A3B] mb-6 pb-3 border-b-2 border-[#A0D0D5]/50 flex items-center";
@@ -160,7 +218,6 @@ const LogHarianNakesPage: React.FC = () => {
           </header>
 
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10">
-            {/* --- Bagian 1: Log Harian Aktivitas Kerja --- */}
             <section className="mb-10 md:mb-12">
               <h2 className={sectionTitleClass}>
                 <ClockIcon className="w-7 h-7 mr-3 text-[#1E47A0]" />1. Log Harian Aktivitas Kerja
@@ -191,7 +248,6 @@ const LogHarianNakesPage: React.FC = () => {
               ]} type="radio" currentValue={formData.istirahatCukup} onChange={handleChange} />
             </section>
 
-            {/* --- Bagian 2: Self-Assessment Kondisi Diri --- */}
             <section>
               <h2 className={sectionTitleClass}>
                 <SparklesIcon className="w-7 h-7 mr-3 text-[#1E47A0]" />2. Self-Assessment Kondisi Diri
@@ -216,7 +272,7 @@ const LogHarianNakesPage: React.FC = () => {
                 { value: 'kadang', label: 'Kadang-kadang' }, { value: 'jarang', label: 'Jarang' }, { value: 'tidak_pernah', label: 'Tidak Pernah' }
               ]} type="radio" currentValue={formData.rasaTerburuBuru} onChange={handleChange} />
 
-              <QuestionGroup id="gejalaFisik" label="Gejala fisik tidak biasa (24 jam terakhir)?" description="(Pilih semua yang sesuai)" options={[
+              <QuestionGroup id="gejalaFisik" label="Gejala fisik tidak biasa (24 jam terakhir)?" icon={HeartIcon} description="(Pilih semua yang sesuai)" options={[
                 { value: 'sakit_kepala', label: 'Sakit Kepala / Pusing' }, { value: 'nyeri_otot', label: 'Nyeri Otot / Sendi' },
                 { value: 'kelelahan_berlebih', label: 'Kelelahan Berlebih' }, { value: 'gangguan_pencernaan', label: 'Gangguan Pencernaan' },
                 { value: 'jantung_berdebar', label: 'Jantung Berdebar' }, { value: 'sulit_tidur', label: 'Sulit Tidur (Insomnia)' },
@@ -239,7 +295,7 @@ const LogHarianNakesPage: React.FC = () => {
 
               <QuestionGroup id="butuhBantuan" label="Merasa butuh bantuan/dukungan lebih lanjut terkait kondisi fisik/mental?" icon={QuestionMarkCircleIcon} options={[
                 { value: 'ya_sangat', label: 'Ya, sangat membutuhkan' }, { value: 'ya_mungkin', label: 'Ya, mungkin membutuhkan' },
-                { value: 'ragu', label: 'Belum tahu / Ragu-ragu' }, { value: 'tidak_baik', label: 'Tidak, merasa baik-baik saja' }, { value: 'tidak_sendiri', label: 'Tidak, bisa mengatasi sendiri' }
+                { value: 'ragu', label: 'Belum tahu / Ragu-ragu' }, { value: 'tidak_merasa_baik', label: 'Tidak, merasa baik-baik saja' }, { value: 'tidak_bisa_sendiri', label: 'Tidak, bisa mengatasi sendiri' }
               ]} type="radio" currentValue={formData.butuhBantuan} onChange={handleChange} />
 
               <QuestionGroup id="upayaJagaKesehatan" label="Sudah melakukan upaya menjaga kesehatan fisik & mental belakangan ini?" icon={HeartIcon} options={[
@@ -250,11 +306,11 @@ const LogHarianNakesPage: React.FC = () => {
 
             <FadeInUp delay="delay-[300ms]" className="mt-10 pt-8 border-t border-[#A0D0D5]/30 text-center">
               <button
-                type="submit" // type="submit" akan memicu form onSubmit
-                // onClick yang sebelumnya salah telah dihapus dari sini
-                className="bg-gradient-to-r from-[#1E47A0] to-[#123A7A] text-[#E0F2F3] font-bold py-3.5 px-14 rounded-lg shadow-xl hover:scale-105 hover:bg-gradient-to-r hover:from-[#A0D0D5] hover:to-[#c3e4e7] hover:text-[#1A0A3B] transition-all duration-300 ease-in-out text-lg focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50"
+                type="submit"
+                className="bg-gradient-to-r from-[#1E47A0] to-[#123A7A] text-[#E0F2F3] font-bold py-3.5 px-14 rounded-lg shadow-xl hover:scale-105 hover:bg-gradient-to-r hover:from-[#A0D0D5] hover:to-[#c3e4e7] hover:text-[#1A0A3B] transition-all duration-300 ease-in-out text-lg focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50 disabled:opacity-70 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
               >
-                Kirim Log Harian
+                {isSubmitting ? 'Mengirim...' : 'Kirim Log Harian'}
               </button>
             </FadeInUp>
           </form>
