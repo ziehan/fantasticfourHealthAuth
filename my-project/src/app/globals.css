@@ -24,3 +24,51 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+          /* KELAS KUSTOM YANG DIBUTUHKAN */
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(160, 208, 213, 0.4); /* Warna #A0D0D5 dengan opacity */
+            border-radius: 10px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(160, 208, 213, 0.7);
+          }
+
+          @keyframes pulse-slower {
+            0%, 100% {
+              opacity: 0.2;
+              transform: scale(0.90);
+            }
+            50% {
+              opacity: 0.6;
+              transform: scale(1);
+            }
+          }
+          .animate-pulse-slower {
+            animation: pulse-slower 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+
+
+          /* globals.css */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(160, 208, 213, 0.5); /* Warna #A0D0D5 dengan opacity */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 208, 213, 0.8); /* Warna #A0D0D5 lebih solid saat hover */
+}
