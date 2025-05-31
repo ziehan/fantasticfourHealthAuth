@@ -1,484 +1,372 @@
 "use client";
 
-import { FormEvent, useState, useEffect } from "react";
-import AddressDropdown from "@/components/AddressDropdown";
+import { FormEvent, useState, useEffect, useMemo } from "react";
+import AddressDropdown from "@/components/AddressDropdown"; // Pastikan path komponen ini benar
 import { supabase } from "@/lib/supabase";
+import { EyeIcon, EyeSlashIcon, CheckCircleIcon, XCircleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+
+// --- Komponen FloatingGeometricShapes (dari STYLING HACKATHON) ---
+const FloatingGeometricShapes: React.FC<{ shapeClassName?: string; count?: number; className?: string }> = ({ shapeClassName = "bg-white/5", count = 10, className = "" }) => (
+  <div className={`absolute inset-0 overflow-hidden -z-10 ${className}`}>
+    {[...Array(count)].map((_, i) => {
+      const size = Math.random() * 60 + 30;
+      const type = Math.random();
+      return (
+        <div
+          key={i}
+          className={`absolute ${shapeClassName} animate-float`}
+          style={{
+            width: `${size}px`,
+            height: `${size}px`,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 8}s`,
+            animationDuration: `${Math.random() * 20 + 15}s`,
+            opacity: Math.random() * 0.08 + 0.02,
+            clipPath: type < 0.33 ? 'circle(50%)' : (type < 0.66 ? 'polygon(50% 0%, 0% 100%, 100% 100%)' : 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)')
+          }}
+        />
+      );
+    })}
+  </div>
+);
+
+// --- Tipe dan Fungsi Bantuan untuk Kekuatan Password ---
+interface PasswordStrength {
+    score: number;
+    message: string;
+    colorClass: string;
+    checks: { length: boolean; lower: boolean; upper: boolean; number: boolean; special: boolean; };
+}
+
+function getPasswordStrength(password: string): PasswordStrength {
+    const checks = {
+        length: password.length >= 8,
+        lower: /[a-z]/.test(password),
+        upper: /[A-Z]/.test(password),
+        number: /\d/.test(password),
+        special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password),
+    };
+    let score = 0;
+    if (checks.length) score++;
+    if (checks.lower) score++;
+    if (checks.upper) score++;
+    if (checks.number) score++;
+    if (checks.special) score++;
+
+    let message = "Sangat Lemah";
+    // Warna ini akan berfungsi baik di atas latar terang maupun gelap untuk status
+    let colorClass = "text-red-600"; 
+
+    if (password.length === 0) {
+        message = "";
+    } else if (score <= 2) {
+        message = "Lemah";
+        colorClass = "text-red-600";
+    } else if (score === 3) {
+        message = "Sedang";
+        colorClass = "text-yellow-600";
+    } else if (score === 4) {
+        message = "Kuat";
+        colorClass = "text-green-600";
+    } else if (score === 5) {
+        message = "Sangat Kuat";
+        colorClass = "text-green-700";
+    }
+    
+    if (password.length > 0 && !checks.length) message = "Minimal 8 karakter.";
+    
+    return { score, message, colorClass, checks };
+}
 
 export default function SignupPage() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [phone, setPhone] = useState('');
-    const [message, setMessage] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [cooldown, setCooldown] = useState(false);
-    const [cooldownLeft, setCooldownLeft] = useState(50);
     const [formData, setFormData] = useState({
-        fullname: "",
-        nik: "",
-        email: "",
-        phone: "",
-        birthDay: "",
-        birthMonth: "",
-        birthYear: "",
-        birthPlace: "",
-        password: "",
-        confirmPassword: "",
-        address: "",
-        profession: "",
-        province: "",
-        regency: "",
-        district: "",
-        village: "",
+        fullname: "", nik: "", email: "", phone: "", birthDay: "", birthMonth: "", birthYear: "",
+        birthPlace: "", password: "", confirmPassword: "", address: "", profession: "",
+        province: "", regency: "", district: "", village: "",
     });
 
     const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [cooldown, setCooldown] = useState(false);
+    const [cooldownLeft, setCooldownLeft] = useState(50);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const passwordStrength = useMemo(() => getPasswordStrength(formData.password), [formData.password]);
+
+    // --- Styling Konstanta ---
+    const darkBluePageGradient = "bg-gradient-to-br from-[#1A0A3B] via-[#1E47A0] to-[#123A7A]";
+    
+    // Styling untuk Box Putih dengan Blur
+    const formContainerClass = "bg-white/90 backdrop-blur-lg shadow-2xl rounded-3xl border border-white/30";
+
+    // Styling untuk elemen form di dalam box putih (kembali ke gaya terang)
+    const primaryDarkTextColor = "text-[#1A0A3B]";
+    const secondaryDarkTextColor = "text-[#1E47A0]";
+    const subtleDarkTextColor = "text-gray-600"; // atau text-[#1E47A0]/80
+
+    const baseInputClass = `w-full px-4 py-3 rounded-xl border bg-white/95 placeholder-gray-400 ${primaryDarkTextColor} focus:outline-none focus:ring-2 shadow-sm transition-colors duration-200 ease-in-out`;
+    const validInputClass = `border-gray-300 hover:border-[#A0D0D5] focus:ring-[#1E47A0] focus:border-[#1E47A0]`;
+    const selectInputClass = `${baseInputClass} ${validInputClass}`;
+
+
+    const labelClass = `block text-sm font-medium ${secondaryDarkTextColor} mb-1.5`;
+    const fieldsetLegendClass = `text-lg font-semibold ${primaryDarkTextColor} px-2 -ml-2`;
+    const fieldsetBorderClass = "border-gray-300/70"; // Border fieldset lebih lembut
+
+    const passwordToggleIconClass = `absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 ${secondaryDarkTextColor}/70 hover:${secondaryDarkTextColor} cursor-pointer`;
+    // --- Akhir Styling Konstanta ---
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        setError(""); // Hapus pesan error saat input berubah
+        setError(""); 
+        if (successMessage) setSuccessMessage('');
     };
 
-    const isValidPhone = (phone: string) => {
-        const regex = /^(\+62|0)8[0-9]{6,}$/;
-        if (!regex.test(phone)) return false;
-        if (/[^0-9+]/.test(phone)) return false;
-        return true;
-    };
-
-    const isValidNik = (nik: string) => {
-        const nikRegex = /^[0-9]{16}$/;
-        return nikRegex.test(nik);
-    };
+    const isValidPhone = (phone: string) => /^(\+62|0)8[0-9]{8,15}$/.test(phone) && !/[^0-9]/.test(phone.startsWith('+') ? phone.substring(3) : phone.substring(1));
+    const isValidNik = (nik: string) => /^[0-9]{16}$/.test(nik);
 
     const fieldLabels: Record<string, string> = {
-        fullname: "Nama Lengkap",
-        nik: "NIK",
-        email: "Email",
-        phone: "Nomor Telepon",
-        password: "Kata Sandi",
-        birthPlace: "Tempat Lahir",
-        birthDay: "Tanggal Lahir",
-        birthMonth: "Bulan Lahir",
-        birthYear: "Tahun Lahir",
-        confirmPassword: "Konfirmasi Kata Sandi",
-        address: "Alamat",
-        profession: "Profesi",
-        province: "Provinsi",
-        regency: "Kabupaten/Kota",
-        district: "Kecamatan",
-        village: "Desa/Kelurahan"
+        fullname: "Nama Lengkap", nik: "NIK", email: "Email", phone: "Nomor Telepon", password: "Kata Sandi",
+        birthPlace: "Tempat Lahir", birthDay: "Tanggal Lahir", birthMonth: "Bulan Lahir", birthYear: "Tahun Lahir",
+        confirmPassword: "Konfirmasi Kata Sandi", address: "Alamat Detail", profession: "Profesi",
+        province: "Provinsi", regency: "Kabupaten/Kota", district: "Kecamatan", village: "Desa/Kelurahan"
     };
 
-    function validatePassword(password: string): boolean {
-        if (password.length < 6) return false;
-
-        const hasLower = /[a-z]/.test(password);
-        const hasUpper = /[A-Z]/.test(password);
-        const hasNumber = /\d/.test(password);
-
-        return hasLower && hasUpper && hasNumber;
-    }
-
-    type AddressDropdownProps = {
-        onChange: (selection: {
-            provinceId: number | null;
-            regencyId: number | null;
-            districtId: number | null;
-            villageId: number | null;
-        }) => void;
-
-    };
-
-
-    // useEffect untuk cooldown tetap sama
     useEffect(() => {
         let timer: NodeJS.Timeout;
         if (cooldown) {
-            timer = setInterval(() => {
-                setCooldownLeft((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(timer);
-                        setCooldown(false);
-                        return 50;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
+            timer = setInterval(() => setCooldownLeft(prev => prev <= 1 ? (clearInterval(timer), setCooldown(false), 50) : prev - 1), 1000);
         }
         return () => clearInterval(timer);
     }, [cooldown]);
 
-    async function getLocationName(table: string, id: number | null) {
-        if (!id) return "";
-        const { data, error } = await supabase
-            .from(table)
-            .select("name")
-            .eq("id", id)
-            .single();
-        if (error) {
-            console.error(`Gagal mengambil ${table}:`, error.message);
-            return "";
-        }
-        return data?.name || "";
-    }
-
-
     async function handleSignup(event: React.FormEvent) {
         event.preventDefault();
-        setError('');
-        setMessage('');
-        setLoading(true);
+        setError(''); setSuccessMessage(''); setLoading(true);
 
-        // Periksa apakah ada field yang kosong
-        const emptyFields = Object.entries(formData).filter(([key, value]) => value === "");
+        const requiredFields = Object.keys(formData).filter(key => ![/* non-required keys */].includes(key)) as (keyof typeof formData)[];
+        const emptyFields = requiredFields.filter(key => !formData[key] || String(formData[key]).trim() === "");
+
         if (emptyFields.length > 0) {
-            setError(`Mohon isi kolom: ${emptyFields
-                .map(([key]) => fieldLabels[key] || key)
-                .join(", ")}`
-            );
-            return;
+            setError(`Mohon lengkapi kolom: ${emptyFields.map(key => fieldLabels[key] || key).join(", ")}.`);
+            setLoading(false); return;
         }
         if (!isValidNik(formData.nik)) {
-            setError("NIK tidak valid. Harus terdiri dari 16 digit angka tanpa huruf.");
-            return;
+            setError("NIK tidak valid. Harus terdiri dari 16 digit angka.");
+            setLoading(false); return;
         }
         if (!isValidPhone(formData.phone)) {
-            setError("Nomor telepon tidak valid. Hanya angka yang diperbolehkan.");
-            return;
+            setError("Nomor telepon tidak valid. Format: 08xxxx atau +628xxxx.");
+            setLoading(false); return;
         }
-        if (!validatePassword(formData.password)) {
-            setError('Password harus minimal 6 karakter, dan mengandung huruf kecil, huruf kapital, serta angka.');
-            return;
+        if (passwordStrength.score < 3) {
+            setError('Password belum cukup kuat. Pastikan minimal 8 karakter, mengandung huruf kecil, huruf kapital, dan angka. Simbol direkomendasikan.');
+            setLoading(false); return;
         }
         if (formData.password !== formData.confirmPassword) {
-            setError("Kata sandi dan Konfirmasi Kata sandi tidak cocok.");
-            return;
+            setError("Kata sandi dan Konfirmasi Kata Sandi tidak cocok.");
+            setLoading(false); return;
+        }
+        const termsCheckbox = document.getElementById('terms-checkbox') as HTMLInputElement;
+        if (!termsCheckbox?.checked) {
+            setError('Anda harus menyetujui Syarat & Ketentuan serta Kebijakan Privasi.');
+            setLoading(false); return;
         }
 
         try {
-            // 2. Proses signup ke Supabase Auth
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: formData.email,
-                password: formData.password
-            });
-
-            // 3. Handle error signup
+            const { data: authData, error: authError } = await supabase.auth.signUp({ email: formData.email, password: formData.password });
             if (authError) {
-                if (authError.message.includes('For security purposes')) {
-                    setCooldown(true);
-                    setError('Tunggu 50 detik sebelum mencoba lagi.');
-                } else {
-                    setError(authError.message);
-                }
-                setLoading(false);
-                return;
+                if (authError.message.includes('User already registered') || authError.message.includes('already exists')) setError('Email ini sudah terdaftar.');
+                else if (authError.message.includes('For security purposes')) { setCooldown(true); setError(`Terlalu banyak percobaan. Harap tunggu ${cooldownLeft} detik.`); }
+                else setError(`Gagal mendaftar: ${authError.message}`);
+                setLoading(false); return;
             }
-
-            // 4. Ambil user data
             const user = authData.user;
-            if (!user) {
-                setError('Gagal mendapatkan data user.');
-                setLoading(false);
-                return;
-            }
-
-            // 5. Cek apakah email sudah terdaftar di profiles
-            const { data: existingProfile, error: checkProfileError } = await supabase
-                .from('profiles')
-                .select('email')
-                .eq('email', formData.email)
-                .maybeSingle();
-
-            if (checkProfileError) {
-                setError(`Gagal memeriksa profil: ${checkProfileError.message}`);
-                setLoading(false);
-                return;
-            }
-
-            if (existingProfile) {
-                setError('Email sudah terdaftar sebelumnya.');
-                setLoading(false);
-                return;
-            }
-            const { data: existingUser, error } = await supabase
-                .from("profiles")
-                .select("nik")
-                .eq("nik", formData.nik)
-                .single();
-
-            if (existingUser) {
-                setError("NIK anda sudah terdaftar.");
-                setLoading(false);
-                return;
-            }
-
-            if (error && error.code !== "PGRST116") {
-                console.error("Error saat cek NIK:", error.message);
-                setError("Terjadi kesalahan saat memeriksa NIK. Coba lagi.");
-                setLoading(false);
-                return;
-            }
-
-            // 6. Persiapan data untuk insert
+            if (!user) { setError('Gagal mendapatkan data user.'); setLoading(false); return; }
+            
             const profileData = {
-                user_id: user.id,
-                email: formData.email,
-                fullname: formData.fullname,
-                nik: formData.nik,
-                phone: formData.phone,
-                birth_day: parseInt(formData.birthDay),
-                birth_month: parseInt(formData.birthMonth),
-                birth_year: parseInt(formData.birthYear),
-                birth_place: formData.birthPlace,
-                address: formData.address,
-                province_id: formData.province,
-                regency_id: formData.regency,
-                district_id: formData.district,
-                village_id: formData.village,
-                profession: formData.profession
+                user_id: user.id, email: formData.email, fullname: formData.fullname, nik: formData.nik, phone: formData.phone,
+                birth_date: `${formData.birthYear}-${String(formData.birthMonth).padStart(2, '0')}-${String(formData.birthDay).padStart(2, '0')}`,
+                birth_place: formData.birthPlace, address_detail: formData.address, province_name: formData.province,
+                regency_name: formData.regency, district_name: formData.district, village_name: formData.village,
+                profession: formData.profession,
             };
-
-            // 7. Insert data ke profiles
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert(profileData);
-
+            const { error: profileError } = await supabase.from('profiles').insert(profileData);
             if (profileError) {
                 console.error('Profile insert error:', profileError);
-                setError(`Gagal menyimpan data: ${profileError.message}`);
-                setLoading(false);
-                return;
+                setError(profileError.message.includes('duplicate key') ? 'Data profil dengan NIK ini mungkin sudah ada.' : `Gagal menyimpan profil: ${profileError.message}.`);
+                setLoading(false); return;
             }
-
-            // 8. Sukses - Reset form dan tampilkan pesan
-            setFormData({
-                fullname: "",
-                nik: "",
-                email: "",
-                phone: "",
-                birthDay: "",
-                birthMonth: "",
-                birthYear: "",
-                birthPlace: "",
-                password: "",
-                confirmPassword: "",
-                address: "",
-                profession: "",
-                province: "",
-                regency: "",
-                district: "",
-                village: ""
-            });
-
-            setMessage('Registrasi berhasil! Silakan cek email untuk verifikasi akun.');
-            setLoading(false);
-
-        } catch (error: any) {
-            console.error('Unexpected error:', error);
-            setError('Terjadi kesalahan yang tidak terduga. Silakan coba lagi.');
-            setLoading(false);
-        }
-    };
-
+            setFormData({ fullname: "", nik: "", email: "", phone: "", birthDay: "", birthMonth: "", birthYear: "", birthPlace: "", password: "", confirmPassword: "", address: "", profession: "", province: "", regency: "", district: "", village: "" });
+            if (termsCheckbox) termsCheckbox.checked = false;
+            setShowPassword(false); setShowConfirmPassword(false);
+            setSuccessMessage('Registrasi berhasil! 🎉 Cek email Anda untuk verifikasi.');
+        } catch (e: any) {
+            console.error('Error:', e); setError('Kesalahan tidak terduga.');
+        } finally { setLoading(false); }
+    }
+    
     return (
-        <div
-            className="min-h-screen bg-cover bg-center flex items-center justify-center overflow-y-auto px-4 py-12 sm:px-6 lg:px-8"
-            style={{ backgroundImage: "url('/bg.png')" }}
-        >
-            <div className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl p-8 w-full max-w-xl space-y-6">
-                <div>
-                    <h1 className="text-3xl font-bold text-center text-gray-900">Daftar</h1>
-                    <p className="mt-2 text-center text-sm text-gray-600">Buat akun Anda sendiri.</p>
+        <div className={`min-h-screen flex items-center justify-center overflow-y-auto px-4 py-12 sm:px-6 lg:px-8 ${darkBluePageGradient} selection:bg-[#A0D0D5] selection:text-[#1A0A3B] relative`}>
+            <FloatingGeometricShapes shapeClassName="bg-white/10" count={12} /> {/* Bentuk geometris sedikit lebih terlihat */}
+            
+            <div className={`${formContainerClass} p-6 sm:p-8 md:p-10 w-full max-w-2xl space-y-6 relative z-10`}>
+                <div className="text-center">
+                    <h1 className={`text-3xl sm:text-4xl font-bold ${primaryDarkTextColor}`}>Buat Akun HealthAuth</h1>
+                    <p className={`mt-2 text-sm sm:text-base ${subtleDarkTextColor}`}>
+                        Selamat datang! Isi form di bawah untuk mendaftar.
+                    </p>
                 </div>
 
-                <form className="space-y-5" onSubmit={handleSignup}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                    <input
-                        type="text"
-                        name="fullname"
-                        placeholder="Nama Lengkap"
-                        value={formData.fullname}
-                        onChange={handleInputChange}
-                        className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <label className="block text-sm font-medium text-gray-700 mb-1">NIK</label>
-                    <input
-                        type="text"
-                        name="nik"
-                        placeholder="NIK"
-                        value={formData.nik}
-                        onChange={handleInputChange}
-                        className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                        type="email"
-                        name="email"
-                        placeholder="Email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input
-                        type="tel"
-                        name="phone"
-                        placeholder="Nomor Telepon"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tempat, Tanggal Lahir</label>
-                    <div className="flex gap-4">
-                        {/* Input Tempat Lahir di kiri */}
-                        <input
-                            type="text"
-                            name="birthPlace"
-                            placeholder="Tempat Lahir"
-                            value={formData.birthPlace}
-                            onChange={handleInputChange}
-                            className="appearance-none rounded-lg relative block w-1/3 px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
+                <form className="space-y-5" onSubmit={handleSignup} noValidate>
+                    <fieldset className={`space-y-5 p-4 border ${fieldsetBorderClass} rounded-xl shadow-sm`}>
+                        <legend className={fieldsetLegendClass}>Data Diri</legend>
+                        <div>
+                            <label htmlFor="fullname" className={labelClass}>Nama Lengkap (sesuai KTP)</label>
+                            <input id="fullname" type="text" name="fullname" placeholder="Nama Lengkap Anda" value={formData.fullname} onChange={handleInputChange} required className={`${baseInputClass} ${validInputClass}`} />
+                        </div>
+                        <div>
+                            <label htmlFor="nik" className={labelClass}>NIK</label>
+                            <input id="nik" type="text" name="nik" placeholder="16 digit Nomor Induk Kependudukan" maxLength={16} value={formData.nik} onChange={handleInputChange} required className={`${baseInputClass} ${validInputClass}`} />
+                        </div>
+                        <div>
+                            <label className={labelClass}>Tempat & Tanggal Lahir</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-5 gap-x-3 gap-y-4">
+                                <input type="text" name="birthPlace" placeholder="Kota Kelahiran" value={formData.birthPlace} onChange={handleInputChange} required className={`${baseInputClass} ${validInputClass} sm:col-span-2`} />
+                                <select name="birthDay" value={formData.birthDay} onChange={handleInputChange} required className={`${selectInputClass} sm:col-span-1`}>
+                                    <option value="" disabled>Tgl</option>
+                                    {[...Array(31)].map((_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
+                                </select>
+                                <select name="birthMonth" value={formData.birthMonth} onChange={handleInputChange} required className={`${selectInputClass} sm:col-span-1`}>
+                                    <option value="" disabled>Bln</option>
+                                    {["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"].map((m, idx) => <option key={idx} value={idx + 1}>{m}</option>)}
+                                </select>
+                                <select name="birthYear" value={formData.birthYear} onChange={handleInputChange} required className={`${selectInputClass} sm:col-span-1`}>
+                                    <option value="" disabled>Thn</option>
+                                    {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 17 - i).map(year => (<option key={year} value={year}>{year}</option>))}
+                                </select>
+                            </div>
+                        </div>
+                    </fieldset>
 
-                        {/* Dropdown Tanggal, Bulan, Tahun di kanan */}
-                        <div className="flex gap-3 w-2/3">
-                            <select
-                                name="birthDay"
-                                value={formData.birthDay}
-                                onChange={handleInputChange}
-                                className="appearance-none rounded-lg relative block w-1/3 px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            >
-                                <option value="" disabled>Tanggal</option>
-                                {[...Array(31)].map((_, i) => (
-                                    <option key={i + 1} value={i + 1}>{i + 1}</option>
-                                ))}
-                            </select>
-
-                            <select
-                                name="birthMonth"
-                                value={formData.birthMonth}
-                                onChange={handleInputChange}
-                                className="appearance-none rounded-lg relative block w-1/3 px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            >
-                                <option value="" disabled>Bulan</option>
-                                {[
-                                    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
-                                    "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
-                                ].map((m, idx) => (
-                                    <option key={idx} value={idx + 1}>{m}</option>
-                                ))}
-                            </select>
-
-                            <select
-                                name="birthYear"
-                                value={formData.birthYear}
-                                onChange={handleInputChange}
-                                className="appearance-none rounded-lg relative block w-1/3 px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                            >
-                                <option value="" disabled>Tahun</option>
-                                {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                                    <option key={year} value={year}>{year}</option>
-                                ))}
+                     <fieldset className={`space-y-5 p-4 border ${fieldsetBorderClass} rounded-xl shadow-sm`}>
+                        <legend className={fieldsetLegendClass}>Kontak & Akun</legend>
+                        <div>
+                            <label htmlFor="email" className={labelClass}>Alamat Email Aktif</label>
+                            <input id="email" type="email" name="email" placeholder="cth: nama@domain.com" value={formData.email} onChange={handleInputChange} required className={`${baseInputClass} ${validInputClass}`} />
+                        </div>
+                        <div>
+                            <label htmlFor="phone" className={labelClass}>Nomor Telepon (WhatsApp)</label>
+                            <input id="phone" type="tel" name="phone" placeholder="cth: 081234567890" value={formData.phone} onChange={handleInputChange} required className={`${baseInputClass} ${validInputClass}`} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label htmlFor="password" className={labelClass}>Kata Sandi</label>
+                            <div className="relative">
+                                <input id="password" type={showPassword ? "text" : "password"} name="password" placeholder="Buat kata sandi yang kuat" value={formData.password} onChange={handleInputChange} required className={`${baseInputClass} ${validInputClass} pr-12`} />
+                                <span onClick={() => setShowPassword(!showPassword)} className={passwordToggleIconClass}> {showPassword ? <EyeSlashIcon /> : <EyeIcon />} </span>
+                            </div>
+                            {formData.password.length > 0 && (
+                                <div className={`text-xs flex items-center space-x-2 pl-1 ${passwordStrength.colorClass}`}>
+                                    <span>Kekuatan: {passwordStrength.message}</span>
+                                </div>
+                            )}
+                             <p className={`text-xs ${subtleDarkTextColor}/90 pl-1`}>Min. 8 karakter, kombinasi huruf besar-kecil, angka, & simbol.</p>
+                        </div>
+                        <div>
+                            <label htmlFor="confirmPassword" className={labelClass}>Konfirmasi Kata Sandi</label>
+                            <div className="relative">
+                                <input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} name="confirmPassword" placeholder="Ulangi kata sandi Anda" value={formData.confirmPassword} onChange={handleInputChange} required className={`${baseInputClass} ${validInputClass} pr-12`} />
+                                <span onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={passwordToggleIconClass}> {showConfirmPassword ? <EyeSlashIcon /> : <EyeIcon />} </span>
+                            </div>
+                        </div>
+                    </fieldset>
+                    
+                     <fieldset className={`space-y-5 p-4 border ${fieldsetBorderClass} rounded-xl shadow-sm`}>
+                        <legend className={fieldsetLegendClass}>Alamat & Profesi</legend>
+                        <div>
+                            <label htmlFor="address" className={labelClass}>Alamat Domisili Detail</label>
+                            <input id="address" type="text" name="address" placeholder="Cth: Jl. Sehat Selalu No. 1, RT 01/RW 02" value={formData.address} onChange={handleInputChange} required className={`${baseInputClass} ${validInputClass}`} />
+                        </div>
+                        <div className="space-y-3">
+                            <label className={`${labelClass} -mb-1`}>Wilayah Administrasi</label>
+                            <AddressDropdown
+                                onChange={({ provinceName, regencyName, districtName, villageName }) =>
+                                    setFormData((prev) => ({ ...prev, province: provinceName, regency: regencyName, district: districtName, village: villageName }))
+                                }
+                                selectContainerClassName="space-y-3"
+                                selectClassName={`${selectInputClass} mb-3`} // Pastikan AddressDropdown menerima ini
+                            />
+                             <p className={`text-xs ${subtleDarkTextColor}/90 pl-1`}>Pastikan semua tingkatan alamat terisi.</p>
+                        </div>
+                        <div>
+                            <label htmlFor="profession" className={labelClass}>Profesi</label>
+                            <select id="profession" name="profession" value={formData.profession} onChange={handleInputChange} required className={selectInputClass} >
+                                <option value="" disabled>Pilih Profesi Anda</option>
+                                {[ "Dokter Umum", "Dokter Spesialis", "Perawat", "Bidan", "Apoteker", "Tenaga Teknis Kefarmasian", "Ahli Gizi/Dietisien", "Fisioterapis", "Sanitarian/Kesehatan Lingkungan", "Epidemiolog Kesehatan", "Promotor Kesehatan", "Perekam Medis dan Informasi Kesehatan", "Teknisi Laboratorium Medis", "Radiografer", "Tenaga Kesehatan Lainnya", "Umum/Non Tenaga Kesehatan"
+                                ].map(prof => <option key={prof} value={prof}>{prof}</option>)}
                             </select>
                         </div>
-                    </div>
+                    </fieldset>
 
-
-
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Kata Sandi</label>
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Kata Sandi"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Kata Sandi</label>
-                    <input
-                        type="password"
-                        name="confirmPassword"
-                        placeholder="Konfirmasi Kata Sandi"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
-                    <input
-                        type="text"
-                        name="address"
-                        placeholder="Alamat"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        className="appearance-none rounded-lg relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    />
-
-                    {/* Tambahkan komponen dropdown alamat di sini */}
-                    <div className="space-y-4">
-                        <AddressDropdown
-                            onChange={({ provinceName, regencyName, districtName, villageName }) =>
-                                setFormData((prev) => ({
-                                    ...prev,
-                                    province: provinceName,
-                                    regency: regencyName,
-                                    district: districtName,
-                                    village: villageName,
-                                }))
-                            }
-                        />
-
-                    </div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Profesi</label>
-                    <select
-                        name="profession"
-                        value={formData.profession}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    >
-                        <option value="" disabled>Pilih Profesi</option>
-                        <option value="tenaga_medis">Tenaga Medis</option>
-                        <option value="tenaga_keperawatan">Tenaga Keperawatan</option>
-                        <option value="tenaga_kebidanan">Tenaga Kebidanan</option>
-                        <option value="tenaga_kefarmasian">Tenaga Kefarmasian</option>
-                        <option value="tenaga_kesehatan_masyarakat">Tenaga Kesehatan Masyarakat</option>
-                        <option value="tenaga_gizi">Tenaga Gizi</option>
-                        <option value="tenaga_keterapian_fisik">Tenaga Keterapian Fisik</option>
-                        <option value="tenaga_teknik_biomedika">Tenaga Teknik Biomedika</option>
-                        <option value="tenaga_kesehatan_nasional">Tenaga Kesehatan Nasional</option>
-                    </select>
-
+                    {/* --- Pesan Alert (Error/Sukses/Cooldown) - Gaya terang --- */}
                     {error && (
-                        <div className="text-red-600 text-sm">
-                            {error}
+                        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow text-sm flex items-start space-x-2" role="alert">
+                            <XCircleIcon className="h-5 w-5 flex-shrink-0 text-red-600"/>
+                            <div><strong className="font-bold">Gagal!</strong> <span className="block sm:inline">{error}</span></div>
+                        </div>
+                    )}
+                    {successMessage && (
+                        <div className="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-md shadow text-sm flex items-start space-x-2" role="alert">
+                            <CheckCircleIcon className="h-5 w-5 flex-shrink-0 text-green-600"/>
+                            <div><strong className="font-bold">Berhasil!</strong> <span className="block sm:inline">{successMessage}</span></div>
+                        </div>
+                    )}
+                    {cooldown && !error.includes("Harap tunggu") && ( 
+                        <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-md shadow text-sm flex items-start space-x-2" role="alert">
+                            <InformationCircleIcon className="h-5 w-5 flex-shrink-0 text-yellow-600"/>
+                            <p>Harap tunggu <strong>{cooldownLeft} detik</strong> sebelum mencoba mendaftar lagi.</p>
                         </div>
                     )}
 
-                    <div className="flex items-start gap-2 text-sm text-gray-700">
-                        <input
-                            id="terms-checkbox"
-                            type="checkbox"
-                            className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            required
-                        />
-                        <label htmlFor="terms-checkbox" className="select-none">
-                            Saya telah membaca, memahami, dan menyetujui Syarat & Ketentuan serta
-                            Kebijakan Privasi yang berlaku.
-                        </label>
+                    <div className="flex items-start gap-x-3 pt-3">
+                         <input id="terms-checkbox" name="terms" type="checkbox" required 
+                               className={`mt-0.5 h-5 w-5 rounded border-gray-400 text-[#1E47A0] focus:ring-2 focus:ring-[#1E47A0]/80 focus:ring-offset-2 focus:ring-offset-white cursor-pointer shadow-sm transition-all`} />
+                        <div>
+                            <label htmlFor="terms-checkbox" className={`text-sm ${subtleDarkTextColor} select-none cursor-pointer`}>
+                                Saya menyatakan bahwa data yang saya isikan adalah benar dan saya menyetujui{" "}
+                                <a href="/terms" target="_blank" rel="noopener noreferrer" className={`font-semibold ${secondaryDarkTextColor} hover:${primaryDarkTextColor} hover:underline`}>
+                                    Syarat & Ketentuan
+                                </a>{" "}
+                                serta{" "}
+                                <a href="/privacy" target="_blank" rel="noopener noreferrer" className={`font-semibold ${secondaryDarkTextColor} hover:${primaryDarkTextColor} hover:underline`}>
+                                    Kebijakan Privasi
+                                </a>{" "}
+                                HealthAuth.
+                            </label>
+                        </div>
                     </div>
 
                     <button
                         type="submit"
-                        className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out"
+                        disabled={loading || cooldown}
+                        className={`w-full flex justify-center items-center py-3.5 px-6 text-base font-semibold rounded-xl text-white 
+                                 bg-gradient-to-r from-[#1E47A0] to-[#123A7A] hover:from-[#123A7A] hover:to-[#1E47A0] 
+                                 focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/70 focus:ring-offset-2 focus:ring-offset-white
+                                 transition-all duration-300 ease-in-out transform hover:scale-[1.02] shadow-lg hover:shadow-xl
+                                 ${loading || cooldown ? 'opacity-70 cursor-not-allowed' : 'opacity-100'}`}
                     >
-                        Daftar
+                        {loading ? ( <> <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Memproses... </>
+                        ) : "Daftar Akun Sekarang"}
                     </button>
                 </form>
 
-                <p className="mt-8 text-center text-sm text-gray-600">
-                    Sudah punya akun?{" "}
-                    <a href="/signin" className="font-medium text-blue-600 hover:text-blue-500 hover:underline">
-                        Masuk
+                <p className={`mt-10 text-center text-sm ${subtleDarkTextColor}`}>
+                    Sudah memiliki akun HealthAuth?{" "}
+                    <a href="/signin" className={`font-semibold ${secondaryDarkTextColor} hover:${primaryDarkTextColor} hover:underline`}>
+                        Masuk di sini
                     </a>
                 </p>
             </div>
