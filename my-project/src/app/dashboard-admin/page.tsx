@@ -199,7 +199,8 @@ const AdminDashboardPageContent: React.FC = () => {
                         // Arahkan ke halaman input data master/referensi
                         // Untuk contoh, kita gunakan alert atau navigasi placeholder
                         // window.location.href = '/admin/data-master'; 
-                        alert('Navigasi ke halaman Input Data Master/Referensi');
+                        window.location.href = "/dashboard-admin/inputdata";
+                        
                     }}
                     className={`${adminPrimaryButtonClass} mt-4 sm:mt-0 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-cyan-600 hover:to-teal-500 text-base px-6 py-3`}
                 >
