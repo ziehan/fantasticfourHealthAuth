@@ -39,7 +39,7 @@ const NavLink: React.FC<NavLinkProps> = ({ href, children, className, onClick })
 
 
 const HealthAuthLogo: React.FC = () => (
-  <a href="instagram.com/mrshlaf" className="flex items-center group">
+  <a href="./" className="flex items-center group">
     {/* Corrected className to use template literals for JS variables */}
     <ShieldCheckIcon className={`h-8 w-8 text-[${bluePrimary}] group-hover:text-[${blueHover}] transition-colors duration-300`} />
     <span className={`ml-2.5 text-xl font-bold text-[${darkText}] group-hover:text-[${bluePrimary}] transition-colors duration-300`}>
