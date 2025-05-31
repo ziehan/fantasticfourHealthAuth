@@ -95,3 +95,35 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(160, 208, 213, 0.5) rgba(255, 255, 255, 0.1);
 }
+
+@keyframes gentle-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(160, 208, 213, 0.4); /* Warna disesuaikan dengan #A0D0D5 */
+  }
+  50% {
+    transform: scale(1.08); /* Sedikit lebih besar untuk efek denyut */
+    box-shadow: 0 0 0 12px rgba(160, 208, 213, 0); /* Warna disesuaikan */
+  }
+}
+
+.animate-gentle-pulse {
+  animation: gentle-pulse 2.5s infinite;
+}
+
+/* Pastikan juga custom-scrollbar sudah didefinisikan jika Anda menggunakannya */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(224, 242, 243, 0.2); /* #E0F2F3 dengan opacity */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(160, 208, 213, 0.7); /* #A0D0D5 dengan opacity */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(30, 71, 160, 0.7); /* #1E47A0 dengan opacity */
+}
