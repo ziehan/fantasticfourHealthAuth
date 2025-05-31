@@ -6,7 +6,7 @@
 import Navbar from './sections/navbar';
 import Footer from './sections/footer';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, FormEvent, ChangeEvent } from 'react'; // Ditambahkan FormEvent, ChangeEvent
 import {
   UserCircleIcon,
   PencilSquareIcon,
@@ -17,11 +17,12 @@ import {
   ClipboardDocumentCheckIcon,
   FaceSmileIcon,
   PlusCircleIcon,
-  LightBulbIcon, // Untuk Quote
-  CheckCircleIcon, // Untuk Tugas Selesai
-  AcademicCapIcon, // Untuk Keahlian
-  LanguageIcon, // Untuk Bahasa
-  TagIcon, // Untuk Filter
+  LightBulbIcon,
+  CheckCircleIcon,
+  AcademicCapIcon,
+  LanguageIcon,
+  TagIcon,
+  XMarkIcon, // Untuk menutup modal
 } from '@heroicons/react/24/outline';
 
 // --- Data Dummy (Diperbarui & Diperkaya) ---
@@ -41,8 +42,8 @@ const profileData = {
   workArea: "Kota Sehat & Sekitarnya",
   strNo: "STR123XYZ/001",
   sipNo: "SIP456ABC/002",
-  lastUpdated: "Jumat, 31 Mei 2025", // Menggunakan format tanggal yang sama dengan currentDate
-  imageUrl: "[https://via.placeholder.com/150/A0D0D5/1A0A3B?Text=Dr.Z](https://via.placeholder.com/150/A0D0D5/1A0A3B?Text=Dr.Z)",
+  lastUpdated: "Jumat, 31 Mei 2025",
+  imageUrl: "https://via.placeholder.com/150/A0D0D5/1A0A3B?Text=Dr.Z", // URL diperbaiki
   skills: ["Penanganan Gawat Darurat", "USG Dasar", "Manajemen Pasien Kronis", "Konseling Kesehatan"],
   languages: ["Bahasa Indonesia (Native)", "English (Professional Working Proficiency)"],
 };
@@ -55,7 +56,29 @@ const quotes = [
   "Merawat adalah inti dari profesi kita."
 ];
 
-const initialTrainingModules = [
+// Tipe untuk item agenda (menyesuaikan initialScheduleData)
+interface ScheduleItem {
+  id: number;
+  time: string;
+  title: string;
+  type: string;
+  priority: 'penting' | 'normal' | 'rendah';
+  status: 'normal' | 'selesai' | 'dibatalkan'; // Ditambahkan 'dibatalkan' jika perlu
+}
+
+// Tipe untuk modul pelatihan (menyesuaikan initialTrainingModules)
+interface TrainingModule {
+  id: number;
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  category: string;
+  duration: string;
+  status: 'Baru' | 'Dimulai' | 'Selesai'; // Menambahkan status modul
+}
+
+
+const initialTrainingModulesData: Omit<TrainingModule, 'status'>[] = [
   { id: 1, title: "Komunikasi Empatik dalam Praktik", subtitle: "Membangun kepercayaan melalui komunikasi.", icon: UserCircleIcon, category: "Soft Skills", duration: "3 Jam" },
   { id: 2, title: "Manajemen Stres & Burnout Nakes", subtitle: "Strategi menjaga kesejahteraan mental.", icon: FaceSmileIcon, category: "Kesejahteraan", duration: "2 Jam" },
   { id: 3, title: "Update Pedoman Tatalaksana Diabetes Mellitus", subtitle: "Panduan terbaru untuk praktik terbaik.", icon: ClipboardDocumentCheckIcon, category: "Klinis", duration: "4 Jam" },
@@ -65,13 +88,13 @@ const initialTrainingModules = [
   { id: 7, title: "Penggunaan Sistem Informasi Kesehatan", subtitle: "Optimalisasi rekam medis elektronik.", icon: MagnifyingGlassIcon, category: "Manajemen", duration: "2 Jam"},
 ];
 
-const initialQuickStatsData = (completedToday: number) => [
-  { id: 1, label: "Pasien Terjadwal Hari Ini", value: "8", icon: CalendarDaysIcon, color: "text-[#A0D0D5]" },
-  { id: 2, label: "Tugas Selesai Hari Ini", value: `${completedToday}/10`, icon: CheckCircleIcon, color: "text-[#E0F2F3]" },
-  { id: 3, label: "Modul Prioritas Belum Selesai", value: "2", icon: PlayCircleIcon, color: "text-[#A0D0D5]" },
+const initialQuickStatsData = (completedToday: number, totalScheduled: number, priorityModules: number) => [
+  { id: 1, label: "Pasien Terjadwal Hari Ini", value: `${totalScheduled}`, icon: CalendarDaysIcon, color: "text-[#A0D0D5]" },
+  { id: 2, label: "Tugas Selesai Hari Ini", value: `${completedToday}/${totalScheduled > 0 ? totalScheduled : '-'}`, icon: CheckCircleIcon, color: "text-[#E0F2F3]" }, // Disesuaikan pembaginya
+  { id: 3, label: "Modul Prioritas Belum Selesai", value: `${priorityModules}`, icon: PlayCircleIcon, color: "text-[#A0D0D5]" },
 ];
 
-const initialScheduleData = [
+const initialScheduleData: ScheduleItem[] = [
   { id: 1, time: "08:00 - 09:00", title: "Persiapan & Review Rekam Medis Pasien", type: "Persiapan", priority: "penting", status: "normal" },
   { id: 2, time: "09:00 - 10:00", title: "Konsultasi Tn. Agus Setiawan", type: "Konsultasi", priority: "normal", status: "normal" },
   { id: 3, time: "10:00 - 10:30", title: "Telekonsultasi Ny. Budiarti", type: "Telemedisin", priority: "normal", status: "selesai" },
@@ -103,7 +126,7 @@ const FloatingParticles: React.FC = () => (
     {[...Array(15)].map((_, i) => (
       <div
         key={i}
-        className="absolute bg-[#A0D0D5]/20 rounded-full animate-pulse-slower" // Pastikan 'animate-pulse-slower' ada di tailwind.config.js
+        className="absolute bg-[#A0D0D5]/20 rounded-full animate-pulse-slower"
         style={{
           width: `${Math.random() * 3 + 1}rem`, height: `${Math.random() * 3 + 1}rem`,
           left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`,
@@ -117,47 +140,73 @@ const FloatingParticles: React.FC = () => (
 const DashboardNakesPage: React.FC = () => {
   const [currentQuote, setCurrentQuote] = useState('');
   const [currentDate, setCurrentDate] = useState('');
-  const [scheduleFilter, setScheduleFilter] = useState('semua');
+  
+  // State untuk data dinamis
+  const [scheduleData, setScheduleData] = useState<ScheduleItem[]>(initialScheduleData);
+  const [trainingModules, setTrainingModules] = useState<TrainingModule[]>(
+    initialTrainingModulesData.map(module => ({ ...module, status: 'Baru' }))
+  );
+
+  const [scheduleFilter, setScheduleFilter] = useState<'semua' | 'penting' | 'selesai'>('semua');
   const [moduleCategoryFilter, setModuleCategoryFilter] = useState('semua');
-  const [searchTerm, setSearchTerm] = useState(''); // Untuk search modul
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // State untuk modal tambah agenda
+  const [isAgendaModalOpen, setIsAgendaModalOpen] = useState(false);
+  const [newAgenda, setNewAgenda] = useState({
+    time: '',
+    title: '',
+    type: 'Umum', // Default type
+    priority: 'normal' as ScheduleItem['priority'],
+  });
 
   useEffect(() => {
     setCurrentQuote(quotes[Math.floor(Math.random() * quotes.length)]);
     const today = new Date();
     setCurrentDate(today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
-    
-    // Update 'lastUpdated' profile jika hari ini adalah tanggal yang sama untuk konsistensi
-    // Ini hanya untuk demo, di aplikasi nyata data ini datang dari backend
-    if (profileData.lastUpdated !== `${today.toLocaleDateString('id-ID', { weekday: 'long' })}, ${today.getDate()} ${today.toLocaleDateString('id-ID', { month: 'long' })} ${today.getFullYear()}`) {
-        // profileData.lastUpdated = `${today.toLocaleDateString('id-ID', { weekday: 'long' })}, ${today.getDate()} ${today.toLocaleDateString('id-ID', { month: 'long' })} ${today.getFullYear()}`;
-        // Sebaiknya tidak memutasi objek langsung seperti ini, tapi karena ini data dummy, untuk demo saja
-    }
-
   }, []);
   
-  const completedTasksToday = useMemo(() => initialScheduleData.filter(item => item.status === 'selesai').length, []);
-  const quickStatsData = useMemo(() => initialQuickStatsData(completedTasksToday), [completedTasksToday]);
+  const completedTasksToday = useMemo(() => scheduleData.filter(item => item.status === 'selesai').length, [scheduleData]);
+  const totalScheduledToday = useMemo(() => scheduleData.filter(item => item.status !== 'dibatalkan').length, [scheduleData]); // Semua yang tidak dibatalkan
+  const priorityModulesNotDone = useMemo(() => trainingModules.filter(m => m.status !== 'Selesai' /* && m.isPriority */).length, [trainingModules]); // Asumsi ada flag isPriority di modul jika perlu
+  
+  const quickStatsData = useMemo(() => initialQuickStatsData(completedTasksToday, totalScheduledToday, priorityModulesNotDone), [completedTasksToday, totalScheduledToday, priorityModulesNotDone]);
+
 
   const filteredSchedule = useMemo(() => {
-    if (scheduleFilter === 'penting') return initialScheduleData.filter(item => item.priority === 'penting' && item.status !== 'selesai');
-    if (scheduleFilter === 'selesai') return initialScheduleData.filter(item => item.status === 'selesai');
-    // Default: tampilkan semua yang belum selesai, urutkan yang penting di atas
-    return initialScheduleData
+    const dataToFilter = [...scheduleData]; // Salin data agar tidak memutasi state asli
+    if (scheduleFilter === 'penting') return dataToFilter.filter(item => item.priority === 'penting' && item.status !== 'selesai');
+    if (scheduleFilter === 'selesai') return dataToFilter.filter(item => item.status === 'selesai');
+    // Default (semua aktif): tampilkan semua yang belum selesai, urutkan yang penting di atas
+    return dataToFilter
       .filter(item => item.status !== 'selesai')
       .sort((a, b) => (a.priority === 'penting' ? -1 : 1) - (b.priority === 'penting' ? -1 : 1));
-  }, [scheduleFilter]);
+  }, [scheduleData, scheduleFilter]);
   
-  const scheduleDisplayData = scheduleFilter === 'semua' 
-    ? initialScheduleData.sort((a,b) => (a.status === 'selesai' ? 1 : -1) - (b.status === 'selesai' ? 1 : -1) || (a.priority === 'penting' ? -1 : 1) - (b.priority === 'penting' ? -1 : 1)) 
-    : filteredSchedule;
+  const scheduleDisplayData = useMemo(() => {
+    if (scheduleFilter === 'semua') {
+      return [...scheduleData].sort((a, b) => { // Salin data untuk sorting
+        // Prioritaskan yang belum selesai
+        if (a.status === 'selesai' && b.status !== 'selesai') return 1;
+        if (a.status !== 'selesai' && b.status === 'selesai') return -1;
+        // Jika sama-sama belum selesai atau sama-sama selesai, urutkan berdasarkan prioritas
+        if (a.priority === 'penting' && b.priority !== 'penting') return -1;
+        if (a.priority !== 'penting' && b.priority === 'penting') return 1;
+        // TODO: Tambahkan sorting berdasarkan waktu jika perlu
+        return 0;
+      });
+    }
+    return filteredSchedule;
+  }, [scheduleData, scheduleFilter, filteredSchedule]);
+
 
   const trainingModuleCategories = useMemo(() => {
-    const categories = new Set(initialTrainingModules.map(module => module.category));
+    const categories = new Set(trainingModules.map(module => module.category));
     return ['semua', ...Array.from(categories)];
-  }, []);
+  }, [trainingModules]); // Bergantung pada trainingModules state
 
   const filteredTrainingModules = useMemo(() => {
-    let modules = initialTrainingModules;
+    let modules = [...trainingModules]; // Salin data
     if (moduleCategoryFilter !== 'semua') {
       modules = modules.filter(module => module.category === moduleCategoryFilter);
     }
@@ -168,11 +217,71 @@ const DashboardNakesPage: React.FC = () => {
       );
     }
     return modules;
-  }, [moduleCategoryFilter, searchTerm]);
+  }, [trainingModules, moduleCategoryFilter, searchTerm]); // Bergantung pada trainingModules state
+
+
+  // Handler untuk modal tambah agenda
+  const handleOpenAgendaModal = () => {
+    setNewAgenda({ time: '', title: '', type: 'Umum', priority: 'normal' }); // Reset form
+    setIsAgendaModalOpen(true);
+  };
+
+  const handleNewAgendaChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewAgenda(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddAgenda = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newAgenda.title.trim() || !newAgenda.time.trim()) {
+      alert("Waktu dan Judul Agenda harus diisi!");
+      return;
+    }
+    const newId = scheduleData.length > 0 ? Math.max(...scheduleData.map(item => item.id)) + 1 : 1;
+    const agendaToAdd: ScheduleItem = {
+      id: newId,
+      time: newAgenda.time,
+      title: newAgenda.title,
+      type: newAgenda.type,
+      priority: newAgenda.priority as ScheduleItem['priority'],
+      status: 'normal', // Agenda baru selalu berstatus 'normal'
+    };
+    setScheduleData(prevSchedule => [agendaToAdd, ...prevSchedule]); // Tambah di awal list
+    setIsAgendaModalOpen(false);
+  };
+
+  // Handler untuk "Mulai Belajar"
+  const handleStartLearning = (moduleId: number) => {
+    setTrainingModules(prevModules =>
+      prevModules.map(module =>
+        module.id === moduleId ? { ...module, status: 'Dimulai' } : module
+      )
+    );
+    const moduleTitle = trainingModules.find(m => m.id === moduleId)?.title;
+    alert(`Memulai modul: "${moduleTitle}"`);
+  };
+  
+  // Handler untuk menandai agenda selesai (Contoh tambahan, bisa diimplementasikan pada item agenda)
+  const handleToggleAgendaStatus = (agendaId: number) => {
+    setScheduleData(prevSchedule =>
+      prevSchedule.map(item =>
+        item.id === agendaId 
+          ? { ...item, status: item.status === 'selesai' ? 'normal' : 'selesai' }
+          : item
+      )
+    );
+  };
+
+  const agendaTypes = ["Persiapan", "Konsultasi", "Telemedisin", "Rapat", "Visite", "Praktik", "Follow-up", "Administrasi", "Penyuluhan", "Umum"];
+  const agendaPriorities: { value: ScheduleItem['priority']; label: string }[] = [
+    { value: 'penting', label: 'Penting' },
+    { value: 'normal', label: 'Normal' },
+    { value: 'rendah', label: 'Rendah' },
+  ];
 
   return (
     <>
-      <Navbar /> {/* Pastikan path Navbar sudah benar */}
+      <Navbar />
       
       {/* === Bagian 1: Hero Greeting & Statistik Cepat === */}
       <section className="min-h-screen h-auto flex flex-col items-center justify-center bg-gradient-to-br from-[#1A0A3B] via-[#1E47A0] to-[#1A0A3B] text-[#E0F2F3] text-center p-6 relative overflow-hidden">
@@ -207,12 +316,11 @@ const DashboardNakesPage: React.FC = () => {
 
         <FadeInUp delay="delay-[800ms]" duration="duration-1000">
           <button
-  className="mt-12 bg-[#A0D0D5] text-[#1A0A3B] font-bold py-3.5 px-12 rounded-lg shadow-xl hover:bg-[#E0F2F3] transform hover:scale-105 transition-all duration-300 ease-in-out text-lg focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50"
-  onClick={() => window.location.href = "./dashboard-nakes/kuesioner"}
->
-  Isi Log Harian Anda
-</button>
-
+            className="mt-12 bg-[#A0D0D5] text-[#1A0A3B] font-bold py-3.5 px-12 rounded-lg shadow-xl hover:bg-[#E0F2F3] transform hover:scale-105 transition-all duration-300 ease-in-out text-lg focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50"
+            onClick={() => window.location.href = "./dashboard-nakes/kuesioner"} // Tetap seperti ini sesuai permintaan "tanpa merubah"
+          >
+            Isi Log Harian Anda
+          </button>
         </FadeInUp>
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce opacity-70">
           <ChevronDownIcon className="w-10 h-10 text-[#A0D0D5]" />
@@ -237,7 +345,7 @@ const DashboardNakesPage: React.FC = () => {
                     ? 'bg-[#1A0A3B] text-white ring-2 ring-[#1E47A0]' 
                     : 'bg-white/70 text-[#1E47A0] hover:bg-[#A0D0D5]/50 hover:text-[#1A0A3B]'}`}
               >
-                {filter === 'semua' ? 'Semua Agenda' : filter === 'penting' ? 'Prioritas Utama (Aktif)' : 'Sudah Selesai'}
+                {filter === 'semua' ? 'Semua Agenda (Aktif & Selesai)' : filter === 'penting' ? 'Prioritas Utama (Aktif)' : 'Sudah Selesai'}
               </button>
             ))}
           </FadeInUp>
@@ -245,8 +353,11 @@ const DashboardNakesPage: React.FC = () => {
           <div className="space-y-4 max-h-[calc(100vh-300px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto pr-2 custom-scrollbar">
             {scheduleDisplayData.length > 0 ? scheduleDisplayData.map((item, index) => (
               <FadeInUp key={item.id} delay={`delay-[${index * 50 + 200}ms]`} duration="duration-500">
-                <div className={`flex items-center space-x-4 p-4 rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl relative
-                  ${item.status === 'selesai' ? 'bg-gray-300/70 opacity-70' : item.priority === 'penting' ? 'bg-gradient-to-r from-[#A0D0D5]/80 to-[#E0F2F3]/90 border-l-4 border-[#1E47A0]' : 'bg-white/80 backdrop-blur-md border border-white/50'}`}>
+                <div 
+                  className={`flex items-center space-x-4 p-4 rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl relative cursor-pointer group
+                    ${item.status === 'selesai' ? 'bg-gray-300/70 opacity-70' : item.priority === 'penting' ? 'bg-gradient-to-r from-[#A0D0D5]/80 to-[#E0F2F3]/90 border-l-4 border-[#1E47A0]' : 'bg-white/80 backdrop-blur-md border border-white/50'}`}
+                  onClick={() => handleToggleAgendaStatus(item.id)} // Contoh: klik untuk toggle status selesai
+                >
                   {item.status === 'selesai' && <div className="absolute inset-0 bg-black/5 rounded-xl pointer-events-none"></div>}
                   <div className={`p-2.5 rounded-full ${item.status === 'selesai' ? 'bg-gray-400/50' : item.priority === 'penting' ? 'bg-[#1E47A0]/20' : 'bg-[#A0D0D5]/30'}`}>
                     <CalendarDaysIcon className={`w-7 h-7 ${item.status === 'selesai' ? 'text-gray-600' : item.priority === 'penting' ? 'text-[#1E47A0]' : 'text-[#1A0A3B]/70'}`} />
@@ -259,6 +370,12 @@ const DashboardNakesPage: React.FC = () => {
                     ${item.status === 'selesai' ? 'bg-gray-500 text-white' : item.priority === 'penting' ? 'bg-[#1E47A0] text-white' : 'bg-[#A0D0D5]/50 text-[#1A0A3B]'}`}>
                     {item.type}
                   </span>
+                  {item.status !== 'selesai' && (
+                     <CheckCircleIcon className="w-6 h-6 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" title="Tandai Selesai"/>
+                  )}
+                  {item.status === 'selesai' && (
+                     <ClipboardDocumentCheckIcon className="w-6 h-6 text-gray-600 ml-2" title="Sudah Selesai"/>
+                  )}
                 </div>
               </FadeInUp>
             )) : (
@@ -268,7 +385,10 @@ const DashboardNakesPage: React.FC = () => {
             )}
           </div>
           <FadeInUp delay="delay-[500ms]" className="text-center mt-8">
-            <button className="bg-[#1E47A0] text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-[#1A0A3B] transform hover:scale-105 transition-all duration-300 ease-in-out flex items-center mx-auto">
+            <button 
+              onClick={handleOpenAgendaModal} // Menggunakan handler untuk membuka modal
+              className="bg-[#1E47A0] text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-[#1A0A3B] transform hover:scale-105 transition-all duration-300 ease-in-out flex items-center mx-auto"
+            >
               <PlusCircleIcon className="w-5 h-5 mr-2" />
               Tambah Agenda Baru
             </button>
@@ -276,7 +396,7 @@ const DashboardNakesPage: React.FC = () => {
         </div>
       </section>
 
-      {/* === Bagian 3: Preview Profil === */}
+      {/* === Bagian 3: Preview Profil === (Tidak diubah signifikan) */}
       <section className="min-h-screen h-auto flex flex-col items-center justify-center bg-[#A0D0D5] p-6 sm:p-8" id='Profil'>
         <FadeInUp className="w-full max-w-4xl my-auto">
           <div className="bg-clip-padding backdrop-filter backdrop-blur-2xl bg-[#E0F2F3]/80 border border-[#E0F2F3]/50 shadow-2xl rounded-3xl overflow-hidden">
@@ -323,7 +443,7 @@ const DashboardNakesPage: React.FC = () => {
                       {profileData.skills.map(skill => <li key={skill}>{skill}</li>)}
                     </ul>
                   </div>
-                   <div className="pt-3 mt-3 border-t border-[#1E47A0]/20">
+                    <div className="pt-3 mt-3 border-t border-[#1E47A0]/20">
                     <h4 className="text-lg font-semibold text-[#1A0A3B] mb-2 flex items-center"><LanguageIcon className="w-5 h-5 mr-2 text-[#1E47A0]"/>Bahasa</h4>
                     <ul className="list-disc list-inside ml-1 space-y-1">
                       {profileData.languages.map(lang => <li key={lang}>{lang}</li>)}
@@ -358,9 +478,9 @@ const DashboardNakesPage: React.FC = () => {
                 className="w-full py-4 px-7 pr-16 rounded-full border-2 border-transparent bg-[#E0F2F3]/90 backdrop-blur-md focus:ring-4 focus:ring-[#A0D0D5]/80 focus:border-[#A0D0D5] text-[#1A0A3B] placeholder-[#1E47A0]/70 transition-all duration-300"
               />
               <button 
-                type="button" // Tambahkan type="button" untuk mencegah submit form jika ada
+                type="button"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-gradient-to-r from-[#1A0A3B] to-[#1E47A0] text-white p-2.5 rounded-full hover:from-[#1E47A0] hover:to-[#1A0A3B] focus:outline-none transition-all duration-300 transform hover:scale-110 shadow-lg"
-                onClick={() => setSearchTerm('')} // Contoh: tombol bisa untuk clear search
+                onClick={() => setSearchTerm('')} 
               >
                 <MagnifyingGlassIcon className="w-5 h-5" />
               </button>
@@ -393,12 +513,21 @@ const DashboardNakesPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center mb-4">
                     <p className="text-xs text-[#E0F2F3]/70">Durasi: {module.duration}</p>
-                    {/* Placeholder untuk progres atau status modul */}
-                    <span className="text-xs text-[#1A0A3B] bg-[#A0D0D5]/70 px-2 py-0.5 rounded-full">Baru</span>
+                    <span className={`text-xs text-[#1A0A3B] px-2 py-0.5 rounded-full
+                      ${module.status === 'Dimulai' ? 'bg-yellow-300/80' : module.status === 'Selesai' ? 'bg-green-400/80' : 'bg-[#A0D0D5]/70'}`}>
+                      {module.status}
+                    </span>
                   </div>
-                  <button className="w-full bg-gradient-to-r from-[#A0D0D5] to-[#E0F2F3] text-[#1A0A3B] font-bold py-3 px-4 rounded-lg hover:from-[#E0F2F3] hover:to-[#A0D0D5] focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50 transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center shadow-md">
+                  <button 
+                    onClick={() => handleStartLearning(module.id)} // Menggunakan handler
+                    disabled={module.status === 'Dimulai' || module.status === 'Selesai'} // Contoh: disable jika sudah dimulai/selesai
+                    className={`w-full bg-gradient-to-r text-[#1A0A3B] font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50 transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center shadow-md
+                      ${module.status === 'Dimulai' || module.status === 'Selesai' 
+                        ? 'from-gray-400 to-gray-500 cursor-not-allowed opacity-70' 
+                        : 'from-[#A0D0D5] to-[#E0F2F3] hover:from-[#E0F2F3] hover:to-[#A0D0D5]'}`}
+                  >
                     <PlayCircleIcon className="w-6 h-6 mr-2" />
-                    Mulai Belajar
+                    {module.status === 'Baru' ? 'Mulai Belajar' : module.status === 'Dimulai' ? 'Sedang Dipelajari' : 'Modul Selesai'}
                   </button>
                 </div>
               </FadeInUp>
@@ -413,7 +542,60 @@ const DashboardNakesPage: React.FC = () => {
           </div>
         </div>
       </section>
-      <Footer /> {/* Pastikan path Footer sudah benar */}
+
+      {/* Modal untuk Tambah Agenda Baru */}
+      {isAgendaModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <FadeInUp duration="duration-300" className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-[#1A0A3B]">Tambah Agenda Baru</h3>
+                <button onClick={() => setIsAgendaModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  <XMarkIcon className="w-7 h-7"/>
+                </button>
+              </div>
+              <form onSubmit={handleAddAgenda} className="space-y-4">
+                <div>
+                  <label htmlFor="time" className="block text-sm font-medium text-[#1E47A0]">Waktu (cth: 09:00 - 10:00)</label>
+                  <input type="text" name="time" id="time" value={newAgenda.time} onChange={handleNewAgendaChange} required
+                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1E47A0] focus:border-[#1E47A0] sm:text-sm text-[#1A0A3B]" />
+                </div>
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-[#1E47A0]">Judul Agenda</label>
+                  <input type="text" name="title" id="title" value={newAgenda.title} onChange={handleNewAgendaChange} required
+                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1E47A0] focus:border-[#1E47A0] sm:text-sm text-[#1A0A3B]" />
+                </div>
+                <div>
+                  <label htmlFor="type" className="block text-sm font-medium text-[#1E47A0]">Jenis Agenda</label>
+                  <select name="type" id="type" value={newAgenda.type} onChange={handleNewAgendaChange}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-[#1E47A0] focus:border-[#1E47A0] sm:text-sm text-[#1A0A3B]">
+                    {agendaTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="priority" className="block text-sm font-medium text-[#1E47A0]">Prioritas</label>
+                  <select name="priority" id="priority" value={newAgenda.priority} onChange={handleNewAgendaChange}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-[#1E47A0] focus:border-[#1E47A0] sm:text-sm text-[#1A0A3B]">
+                    {agendaPriorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                  </select>
+                </div>
+                <div className="pt-2 flex justify-end space-x-3">
+                  <button type="button" onClick={() => setIsAgendaModalOpen(false)}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    Batal
+                  </button>
+                  <button type="submit"
+                          className="px-4 py-2 text-sm font-medium text-white bg-[#1E47A0] rounded-md hover:bg-[#1A0A3B] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1E47A0]">
+                    Simpan Agenda
+                  </button>
+                </div>
+              </form>
+            </div>
+          </FadeInUp>
+        </div>
+      )}
+
+      <Footer />
     </>
   );
 };
