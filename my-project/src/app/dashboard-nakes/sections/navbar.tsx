@@ -62,6 +62,7 @@ const Navbar: React.FC = () => {
     { href: "#Jadwal", label: "Jadwal" },
     { href: "#Profil", label: "Profil" },
     { href: "#Pelatihan", label: "Pelatihan" },
+    { href: "../dashboard-nakes/assistant", label: "Asisten AI" },
   ];
 
   useEffect(() => {

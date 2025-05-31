@@ -54,14 +54,15 @@ const Navbar: React.FC = () => {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
-    alert('Login clicked!');
+    alert('Logout clicked!');
     setMobileMenuOpen(false);
   };
 
   const navLinks = [
-    { href: "#About", label: "Tentang Kami" },
-    { href: "#Faq", label: "Pertanyaan Umum" },
-    { href: "#Kontak", label: "Kontak" },
+    { href: "../dashboard-nakes/#Jadwal", label: "Jadwal" },
+    { href: "../dashboard-nakes/#Profil", label: "Profil" },
+    { href: "../dashboard-nakes/#Pelatihan", label: "Pelatihan" },
+    { href: "../dashboard-nakes/assistant", label: "Asisten AI" },
   ];
 
   useEffect(() => {
@@ -109,7 +110,7 @@ const Navbar: React.FC = () => {
                       font-semibold py-2 px-6 rounded-full text-sm transition-all duration-300 ease-in-out
                       focus:outline-none focus:ring-2 focus:ring-[${bluePrimary}] focus:ring-opacity-50 transform hover:scale-105`}
         >
-          Login
+          Logout
         </button>
       </div>
 
@@ -169,7 +170,7 @@ const Navbar: React.FC = () => {
                               duration-300 ease-in-out focus:outline-none focus:ring-2
                               focus:ring-[${bluePrimary}] focus:ring-opacity-50`}
               >
-                Login
+                Logout
               </button>
             </div>
           </div>

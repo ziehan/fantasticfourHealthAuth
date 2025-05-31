@@ -1,10 +1,10 @@
 // app/dashboard-nakes/page.tsx
 "use client";
 
-// Asumsi folder 'sections' ada di 'app/sections/'
-// Jika 'sections' ada di root proyek, gunakan '../../../sections/navbar'
-import Navbar from './sections/navbar';
-import Footer from './sections/footer';
+// Asumsi folder 'sections' ada di 'app/dashboard-nakes/sections/'
+import Navbar from './sections/navbar'; // Path ini sudah benar berdasarkan struktur Anda
+import Footer from './sections/footer';   // Path ini sudah benar
+import Link from 'next/link';
 
 import React, { useEffect, useState, useMemo, FormEvent, ChangeEvent } from 'react'; // Ditambahkan FormEvent, ChangeEvent
 import {
@@ -22,13 +22,25 @@ import {
   AcademicCapIcon,
   LanguageIcon,
   TagIcon,
+<<<<<<< Updated upstream
   XMarkIcon, // Untuk menutup modal
 } from '@heroicons/react/24/outline';
 
+=======
+  XMarkIcon,
+  InformationCircleIcon,      // Untuk modal asisten
+  ChatBubbleLeftEllipsisIcon, // Untuk FAB dan modal asisten
+} from '@heroicons/react/24/outline';
+
+// Impor Chatbox Anda - PASTIKAN PATH INI BENAR
+import Chatbox from '@/components/chatbox'; // Path ini menggunakan alias '@/' yang merujuk ke root atau src. Ini umum dan seharusnya bekerja jika tsconfig.json/jsconfig.json dikonfigurasi.
+
+>>>>>>> Stashed changes
 // --- Data Dummy (Diperbarui & Diperkaya) ---
 const profileData = {
   name: "Dr. Zulfahmi",
   fullName: "Dr. Faza Zulfahmi Ramadhan",
+  // ... (sisa profileData Anda)
   specialization: "Dokter Umum",
   nik: "3210011708850001",
   birthPlaceDate: "Bandung, 17 Agustus 1985",
@@ -47,7 +59,7 @@ const profileData = {
   skills: ["Penanganan Gawat Darurat", "USG Dasar", "Manajemen Pasien Kronis", "Konseling Kesehatan"],
   languages: ["Bahasa Indonesia (Native)", "English (Professional Working Proficiency)"],
 };
-
+// ... (sisa kode data dummy, interface, komponen FadeInUp, FloatingParticles)
 const quotes = [
   "Satu-satunya cara untuk melakukan pekerjaan hebat adalah dengan mencintai apa yang Anda lakukan. - Steve Jobs",
   "Kesehatan adalah kekayaan yang sebenarnya. - Mahatma Gandhi",
@@ -137,6 +149,7 @@ const FloatingParticles: React.FC = () => (
   </div>
 );
 
+
 const DashboardNakesPage: React.FC = () => {
   const [currentQuote, setCurrentQuote] = useState('');
   const [currentDate, setCurrentDate] = useState('');
@@ -160,12 +173,20 @@ const DashboardNakesPage: React.FC = () => {
     priority: 'normal' as ScheduleItem['priority'],
   });
 
+<<<<<<< Updated upstream
+=======
+  // State untuk modal Asisten AI - SUDAH ADA
+  const [isAssistantModalOpen, setIsAssistantModalOpen] = useState(false);
+
+
+>>>>>>> Stashed changes
   useEffect(() => {
     setCurrentQuote(quotes[Math.floor(Math.random() * quotes.length)]);
     const today = new Date();
     setCurrentDate(today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
   }, []);
   
+  // ... (sisa useEffects dan useMemos Anda)
   const completedTasksToday = useMemo(() => scheduleData.filter(item => item.status === 'selesai').length, [scheduleData]);
   const totalScheduledToday = useMemo(() => scheduleData.filter(item => item.status !== 'dibatalkan').length, [scheduleData]); // Semua yang tidak dibatalkan
   const priorityModulesNotDone = useMemo(() => trainingModules.filter(m => m.status !== 'Selesai' /* && m.isPriority */).length, [trainingModules]); // Asumsi ada flag isPriority di modul jika perlu
@@ -220,7 +241,10 @@ const DashboardNakesPage: React.FC = () => {
   }, [trainingModules, moduleCategoryFilter, searchTerm]); // Bergantung pada trainingModules state
 
 
+<<<<<<< Updated upstream
   // Handler untuk modal tambah agenda
+=======
+>>>>>>> Stashed changes
   const handleOpenAgendaModal = () => {
     setNewAgenda({ time: '', title: '', type: 'Umum', priority: 'normal' }); // Reset form
     setIsAgendaModalOpen(true);
@@ -272,6 +296,14 @@ const DashboardNakesPage: React.FC = () => {
     );
   };
 
+<<<<<<< Updated upstream
+=======
+  // Handler untuk modal Asisten AI - SUDAH ADA
+  const handleOpenAssistantModal = () => setIsAssistantModalOpen(true);
+  const handleCloseAssistantModal = () => setIsAssistantModalOpen(false);
+
+  // ... (sisa handler dan data Anda)
+>>>>>>> Stashed changes
   const agendaTypes = ["Persiapan", "Konsultasi", "Telemedisin", "Rapat", "Visite", "Praktik", "Follow-up", "Administrasi", "Penyuluhan", "Umum"];
   const agendaPriorities: { value: ScheduleItem['priority']; label: string }[] = [
     { value: 'penting', label: 'Penting' },
@@ -279,7 +311,9 @@ const DashboardNakesPage: React.FC = () => {
     { value: 'rendah', label: 'Rendah' },
   ];
 
+
   return (
+<<<<<<< Updated upstream
     <>
       <Navbar />
       
@@ -301,6 +335,31 @@ const DashboardNakesPage: React.FC = () => {
           <LightBulbIcon className="w-6 h-6 inline-block mr-2 mb-1" />
           &quot;{currentQuote}&quot;
         </FadeInUp>
+=======
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      
+      <main className="flex-grow">
+        {/* === Bagian 1: Hero Greeting & Statistik Cepat === */}
+        {/* ... Konten Hero Section ... */}
+        <section className="min-h-screen h-auto flex flex-col items-center justify-center bg-gradient-to-br from-[#1A0A3B] via-[#1E47A0] to-[#1A0A3B] text-[#E0F2F3] text-center p-6 relative overflow-hidden">
+          <FloatingParticles />
+            <FadeInUp duration="duration-1000" className="w-full max-w-4xl">
+            <p className="text-lg opacity-90 mb-2 text-[#A0D0D5]">{currentDate}</p>
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight">
+                Halo {profileData.name}
+            </h1>
+            </FadeInUp>
+            <FadeInUp delay="delay-[200ms]" duration="duration-1000" className="w-full max-w-4xl">
+            <p className="mt-4 text-xl sm:text-2xl opacity-80">
+                Selamat datang kembali! Semoga harimu produktif dan menyenangkan.
+            </p>
+            </FadeInUp>
+            <FadeInUp delay="delay-[400ms]" duration="duration-1000" className="mt-6 italic text-center max-w-2xl mx-auto text-[#A0D0D5]/90">
+            <LightBulbIcon className="w-6 h-6 inline-block mr-2 mb-1" />
+            &quot;{currentQuote}&quot;
+            </FadeInUp>
+>>>>>>> Stashed changes
 
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-3xl w-full">
           {quickStatsData.map((stat, index) => (
@@ -452,6 +511,7 @@ const DashboardNakesPage: React.FC = () => {
                 </div>
               </div>
             </div>
+<<<<<<< Updated upstream
           </div>
         </FadeInUp>
       </section>
@@ -492,6 +552,36 @@ const DashboardNakesPage: React.FC = () => {
                   ${moduleCategoryFilter === category 
                     ? 'bg-[#A0D0D5] text-[#1A0A3B] border-[#A0D0D5]' 
                     : 'bg-transparent text-[#A0D0D5] border-[#A0D0D5]/50 hover:bg-[#A0D0D5]/30 hover:text-white'}`}
+=======
+
+            <div className="mt-12">
+              <Link href="dashboard-nakes/assistant" legacyBehavior>
+                <a className="inline-flex items-center justify-center px-8 py-4 bg-sky-500 text-white text-lg font-semibold rounded-xl shadow-lg hover:bg-sky-600 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2 focus:ring-offset-slate-900">
+                Mulai Konsultasi dengan Asisten AI
+                </a>
+              </Link>
+            </div>
+        </section>
+
+        {/* === Bagian 2: Jadwal Saya === */}
+        {/* ... Konten Jadwal ... */}
+         <section className="min-h-screen h-auto flex flex-col items-center justify-center bg-[#E0F2F3] p-6 sm:p-8" id='Jadwal'>
+            <div className="w-full max-w-5xl my-auto">
+            <FadeInUp className="text-center">
+                <h2 className="text-4xl sm:text-5xl font-bold text-[#1A0A3B] mb-3">Jadwal Anda Hari Ini</h2>
+                <p className="text-lg text-[#1E47A0]/80 mb-6">Tetap terorganisir dan fokus pada prioritas Anda.</p>
+            </FadeInUp>
+            
+            <FadeInUp delay="delay-[100ms]" className="mb-6 flex flex-wrap justify-center gap-2 sm:gap-3">
+                {(['semua', 'penting', 'selesai'] as const).map(filter => (
+                <button
+                    key={filter}
+                    onClick={() => setScheduleFilter(filter)}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 shadow-sm
+                    ${scheduleFilter === filter 
+                        ? 'bg-[#1A0A3B] text-white ring-2 ring-[#1E47A0]' 
+                        : 'bg-white/70 text-[#1E47A0] hover:bg-[#A0D0D5]/50 hover:text-[#1A0A3B]'}`}
+>>>>>>> Stashed changes
                 >
                   <TagIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 inline-block"/>{category === 'semua' ? 'Semua Kategori' : category}
                 </button>
@@ -517,6 +607,7 @@ const DashboardNakesPage: React.FC = () => {
                       ${module.status === 'Dimulai' ? 'bg-yellow-300/80' : module.status === 'Selesai' ? 'bg-green-400/80' : 'bg-[#A0D0D5]/70'}`}>
                       {module.status}
                     </span>
+<<<<<<< Updated upstream
                   </div>
                   <button 
                     onClick={() => handleStartLearning(module.id)} // Menggunakan handler
@@ -544,9 +635,185 @@ const DashboardNakesPage: React.FC = () => {
       </section>
 
       {/* Modal untuk Tambah Agenda Baru */}
+=======
+                    {item.status !== 'selesai' && (
+                        <CheckCircleIcon className="w-6 h-6 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" title="Tandai Selesai"/>
+                    )}
+                    {item.status === 'selesai' && (
+                        <ClipboardDocumentCheckIcon className="w-6 h-6 text-gray-600 ml-2" title="Sudah Selesai"/>
+                    )}
+                    </div>
+                </FadeInUp>
+                )) : (
+                <FadeInUp delay="delay-[200ms]">
+                    <p className="text-center text-gray-500 py-10 text-lg">Tidak ada jadwal yang sesuai dengan filter &quot;{scheduleFilter}&quot;.</p>
+                </FadeInUp>
+                )}
+            </div>
+            <FadeInUp delay="delay-[500ms]" className="text-center mt-8">
+                <button 
+                onClick={handleOpenAgendaModal}
+                className="bg-[#1E47A0] text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-[#1A0A3B] transform hover:scale-105 transition-all duration-300 ease-in-out flex items-center mx-auto"
+                >
+                <PlusCircleIcon className="w-5 h-5 mr-2" />
+                Tambah Agenda Baru
+                </button>
+            </FadeInUp>
+            </div>
+        </section>
+
+        {/* === Bagian 3: Preview Profil === */}
+        {/* ... Konten Profil ... */}
+        <section className="min-h-screen h-auto flex flex-col items-center justify-center bg-[#A0D0D5] p-6 sm:p-8" id='Profil'>
+            <FadeInUp className="w-full max-w-4xl my-auto">
+            <div className="bg-clip-padding backdrop-filter backdrop-blur-2xl bg-[#E0F2F3]/80 border border-[#E0F2F3]/50 shadow-2xl rounded-3xl overflow-hidden">
+                <div className="p-6 sm:p-10">
+                <h2 className="text-4xl sm:text-5xl font-bold text-[#1A0A3B] mb-10 text-center">
+                    Profil Saya
+                </h2>
+                <div className="md:grid md:grid-cols-3 md:gap-x-8 items-start">
+                    <div className="md:col-span-1 text-center md:text-left mb-8 md:mb-0 flex flex-col items-center md:items-start">
+                    <img src={profileData.imageUrl} alt={`Foto ${profileData.fullName}`}
+                        className="w-40 h-40 sm:w-48 sm:h-48 rounded-full object-cover shadow-2xl border-4 border-[#E0F2F3] ring-2 ring-[#1E47A0]/50 transform transition-all duration-500 hover:scale-110 hover:rotate-3"
+                    />
+                    <button className="mt-6 text-sm flex items-center text-[#1E47A0] hover:text-[#1A0A3B] font-semibold transition group">
+                        <PencilSquareIcon className="w-5 h-5 mr-1.5 transition-transform duration-300 group-hover:rotate-[-10deg]" />
+                        Perbarui Profil
+                    </button>
+                    <p className="mt-3 text-xs text-[#1A0A3B]/70 text-center md:text-left">
+                        Terakhir Diperbaharui: {profileData.lastUpdated}
+                    </p>
+                    </div>
+                    <div className="md:col-span-2 space-y-2 text-sm text-[#1A0A3B]/90">
+                    <h3 className="text-2xl sm:text-3xl font-bold text-[#1A0A3B] mb-4">{profileData.fullName}</h3>
+                    {[
+                        { label: "Spesialisasi", value: profileData.specialization },
+                        { label: "NIK", value: profileData.nik },
+                        { label: "TTL", value: profileData.birthPlaceDate },
+                        // ...data profil lainnya
+                        { label: "FKTP", value: `${profileData.fktpName}, ${profileData.fktpAddress}` },
+                    ].map(item => (
+                        <p key={item.label}> {/* Removed fullWidth logic as it wasn't defined in your example */}
+                        <span className="font-bold text-[#1E47A0] w-28 sm:w-36 inline-block">{item.label}:</span> {item.value}
+                        </p>
+                    ))}
+                    
+                    <div className="pt-4 mt-4 border-t border-[#1E47A0]/20">
+                        <h4 className="text-lg font-semibold text-[#1A0A3B] mb-2 flex items-center"><AcademicCapIcon className="w-5 h-5 mr-2 text-[#1E47A0]"/>Keahlian Utama</h4>
+                        <ul className="list-disc list-inside ml-1 space-y-1">
+                        {profileData.skills.map(skill => <li key={skill}>{skill}</li>)}
+                        </ul>
+                    </div>
+                        <div className="pt-3 mt-3 border-t border-[#1E47A0]/20">
+                        <h4 className="text-lg font-semibold text-[#1A0A3B] mb-2 flex items-center"><LanguageIcon className="w-5 h-5 mr-2 text-[#1E47A0]"/>Bahasa</h4>
+                        <ul className="list-disc list-inside ml-1 space-y-1">
+                        {profileData.languages.map(lang => <li key={lang}>{lang}</li>)}
+                        </ul>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </FadeInUp>
+        </section>
+
+        {/* === Bagian 4: Pusat Pelatihan === */}
+        {/* ... Konten Pelatihan ... */}
+        <section className="min-h-screen h-auto flex flex-col items-center bg-[#1E47A0] p-6 sm:p-8 pt-10 sm:pt-12 md:pt-16" id='Pelatihan'>
+            <div className="w-full max-w-6xl z-10">
+            <FadeInUp>
+                <h2 className="text-4xl sm:text-5xl font-bold text-[#E0F2F3] text-center mb-3">Pusat Pelatihan</h2>
+            </FadeInUp>
+            <FadeInUp delay="delay-[150ms]">
+                <p className="text-[#A0D0D5]/90 text-center mb-6 max-w-2xl mx-auto text-lg">
+                Asah terus kompetensi Anda dengan modul pilihan terbaik ({filteredTrainingModules.length} modul tersedia).
+                </p>
+            </FadeInUp>
+
+            <FadeInUp delay="delay-[250ms]" className="mb-8 flex flex-col items-center">
+                <div className="relative flex items-center shadow-xl rounded-full w-full max-w-xl mb-4">
+                <input 
+                    type="search" 
+                    placeholder="Cari modul berdasarkan judul atau deskripsi..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full py-4 px-7 pr-16 rounded-full border-2 border-transparent bg-[#E0F2F3]/90 backdrop-blur-md focus:ring-4 focus:ring-[#A0D0D5]/80 focus:border-[#A0D0D5] text-[#1A0A3B] placeholder-[#1E47A0]/70 transition-all duration-300"
+                />
+                <button 
+                    type="button"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-gradient-to-r from-[#1A0A3B] to-[#1E47A0] text-white p-2.5 rounded-full hover:from-[#1E47A0] hover:to-[#1A0A3B] focus:outline-none transition-all duration-300 transform hover:scale-110 shadow-lg"
+                    onClick={() => setSearchTerm('')} 
+                >
+                    <MagnifyingGlassIcon className="w-5 h-5" />
+                </button>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+                {trainingModuleCategories.map(category => (
+                    <button key={category} onClick={() => setModuleCategoryFilter(category)}
+                    className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-200 border-2
+                    ${moduleCategoryFilter === category 
+                        ? 'bg-[#A0D0D5] text-[#1A0A3B] border-[#A0D0D5]' 
+                        : 'bg-transparent text-[#A0D0D5] border-[#A0D0D5]/50 hover:bg-[#A0D0D5]/30 hover:text-white'}`}
+                    >
+                    <TagIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1 inline-block"/>{category === 'semua' ? 'Semua Kategori' : category}
+                    </button>
+                ))}
+                </div>
+            </FadeInUp>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-16">
+                {filteredTrainingModules.length > 0 ? filteredTrainingModules.map((module, index) => (
+                <FadeInUp key={module.id} delay={`delay-[${index * 100 + 300}ms]`}>
+                    <div className="bg-clip-padding backdrop-filter backdrop-blur-lg bg-[#A0D0D5]/30 border border-[#A0D0D5]/40 rounded-2xl shadow-xl p-6 flex flex-col h-full hover:shadow-[#A0D0D5]/30 transition-all duration-300 transform hover:-translate-y-2 group">
+                    <div className="flex-grow mb-4">
+                        <div className="flex justify-between items-start mb-2">
+                            <module.icon className="w-10 h-10 text-[#E0F2F3]/80 group-hover:text-[#E0F2F3] transition-colors"/>
+                            <span className="text-xs bg-[#1A0A3B]/50 text-[#A0D0D5] px-2 py-0.5 rounded-full">{module.category}</span>
+                        </div>
+                        <h3 className="text-xl font-semibold text-white mb-1.5 line-clamp-2 group-hover:text-[#E0F2F3] transition-colors">{module.title}</h3>
+                        <p className="text-sm text-[#E0F2F3]/80 mb-3 line-clamp-3">{module.subtitle}</p>
+                    </div>
+                    <div className="flex justify-between items-center mb-4">
+                        <p className="text-xs text-[#E0F2F3]/70">Durasi: {module.duration}</p>
+                        <span className={`text-xs text-[#1A0A3B] px-2 py-0.5 rounded-full
+                        ${module.status === 'Dimulai' ? 'bg-yellow-300/80' : module.status === 'Selesai' ? 'bg-green-400/80' : 'bg-[#A0D0D5]/70'}`}>
+                        {module.status}
+                        </span>
+                    </div>
+                    <button 
+                        onClick={() => handleStartLearning(module.id)}
+                        disabled={module.status === 'Dimulai' || module.status === 'Selesai'}
+                        className={`w-full bg-gradient-to-r text-[#1A0A3B] font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#A0D0D5]/50 transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center shadow-md
+                        ${module.status === 'Dimulai' || module.status === 'Selesai' 
+                            ? 'from-gray-400 to-gray-500 cursor-not-allowed opacity-70' 
+                            : 'from-[#A0D0D5] to-[#E0F2F3] hover:from-[#E0F2F3] hover:to-[#A0D0D5]'}`}
+                    >
+                        <PlayCircleIcon className="w-6 h-6 mr-2" />
+                        {module.status === 'Baru' ? 'Mulai Belajar' : module.status === 'Dimulai' ? 'Sedang Dipelajari' : 'Modul Selesai'}
+                    </button>
+                    </div>
+                </FadeInUp>
+                )) : (
+                <FadeInUp delay="delay-[200ms]" className="md:col-span-2 lg:col-span-3">
+                    <p className="text-center text-[#A0D0D5]/80 py-20 text-xl">
+                    Tidak ada modul pelatihan yang cocok dengan pencarian &quot;{searchTerm}&quot;
+                    {moduleCategoryFilter !== 'semua' && ` dalam kategori "${moduleCategoryFilter}"`}.
+                    </p>
+                </FadeInUp>
+                )}
+            </div>
+            </div>
+        </section>
+      </main>
+
+      <Footer />
+
+      {/* Modal untuk Tambah Agenda Baru - SUDAH ADA */}
+>>>>>>> Stashed changes
       {isAgendaModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <FadeInUp duration="duration-300" className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            {/* ... Konten Modal Tambah Agenda ... */}
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold text-[#1A0A3B]">Tambah Agenda Baru</h3>
@@ -594,9 +861,13 @@ const DashboardNakesPage: React.FC = () => {
           </FadeInUp>
         </div>
       )}
+<<<<<<< Updated upstream
 
       <Footer />
     </>
+=======
+    </div>
+>>>>>>> Stashed changes
   );
 };
 
